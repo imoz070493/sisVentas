@@ -19,6 +19,7 @@ class Articulo extends Model
     	'stock',
     	'descripcion',
     	'imagen',
+        'unidad_medida',
     	'estado'
     ];
 

@@ -37,7 +37,7 @@ class VentaController extends Controller
     		$ventas = DB::table('venta as v')
     			->join('persona as p','v.idcliente','=','p.idpersona')
     			->join('detalle_venta as dv','v.idventa','=','dv.idventa')
-    			->select('v.idventa','v.fecha_hora','p.nombre','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante','v.impuesto','v.estado','v.total_venta')
+    			->select('v.idventa','v.fecha_hora','p.nombre','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante','v.impuesto','v.estado','v.total_venta','v.response_code')
     			->where('v.num_comprobante','LIKE','%'.$query.'%')
     			->orderBy('v.idventa','desc')
     			->groupBy('v.idventa','v.fecha_hora','p.nombre','v.tipo_comprobante','v.serie_comprobante','v.impuesto','v.estado')
@@ -126,11 +126,37 @@ class VentaController extends Controller
 
         $factura = "20563817161-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
         $invoice->enviarFactura($factura);
-        // $invoice->readCdr('','','');        
-        // $invoice->crearPDF();
+        $path = public_path('cdn/cdr\R-'.$factura.'.ZIP');
+        LOG::info($path);
+        $responseCdr = $invoice->readCdr('',$path,$tipo_comprobante);
+
+        $v = Venta::findOrFail($venta->idventa);
+        $v->response_code=$responseCdr['code'];
+        $v->descripcion_code=$responseCdr['message'];
+        $v->update();
+
+        $cliente = DB::table('persona as per')
+            ->join('venta as v','per.idpersona','=','v.idcliente')
+            ->select('per.nombre','per.direccion','per.num_documento','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante')
+            ->where('v.idventa','=',$venta->idventa)
+            ->first();
+
+        $items = DB::table('venta as v')
+            ->join('detalle_venta as dv','dv.idventa','=','v.idventa')
+            ->join('articulo as art','art.idarticulo','=','dv.idarticulo')
+            ->select('art.codigo','art.nombre','dv.cantidad','dv.precio_venta',DB::raw('dv.cantidad * dv.precio_venta AS total'))
+            ->where('v.idventa','=',$venta->idventa)
+            ->get();
+        
+        $invoice->crearPDF($cliente,$items);
 
 
     	return Redirect::to('ventas/venta');
+    }
+
+    public function crearPDF(){
+        $invoice = new Core\Invoice();
+        $invoice->crearPDF();
     }
 
     public function show($id)
@@ -156,5 +182,31 @@ class VentaController extends Controller
     	$venta->Estado='C';
     	$venta->update();
     	return Redirect::to('ventas/venta');
+    }
+
+    public function peticion(Request $request){
+        $tipo_comprobante = $_POST['tipoComprobante'];
+        if($tipo_comprobante=='01'){
+            $serie = "F001";    
+        }
+        if($tipo_comprobante=='03'){
+            $serie = "B001";    
+        }        
+
+        $ventas = DB::table('venta')
+                ->select('*')
+                ->where('serie_comprobante','LIKE','%'.$serie.'%')
+                ->orderBy('idventa','desc')
+                ->first();
+        if(is_null($ventas)){
+            $num_comprobante=0;
+        }else{
+            $num_comprobante = $ventas->num_comprobante;
+        }
+        return response()->json([
+            'serie' => $serie,
+            'correlativo' => str_pad($num_comprobante + 1,  8, "0", STR_PAD_LEFT),
+            // 'ventas'=>$ventas
+        ]);
     }
 }

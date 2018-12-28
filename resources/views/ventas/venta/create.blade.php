@@ -18,7 +18,52 @@
 			{!!Form::open(array('url'=>'ventas/venta','method'=>'POST','autocomplete'=>'off'))!!}
 			{{Form::token()}}	
 	<div class="row">
-		<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+			<div class="form-group">
+				<label>Tip. Comp.</label>
+				<select name="tipo_comprobante" id="tipo_comprobante" class="form-control">
+					<option>Seleccione</option>
+					<option value="01">Factura</option>
+					<option value="03">Boleta</option>
+				</select>
+			</div>
+		</div>
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+			<div class="form-group">
+				<label for="serie_comprobante">Serie Comprobante</label>
+				<input type="text" name="serie_comprobante" id="serie_comprobante" value="{{old('serie_comprobante')}}" class="form-control" readonly="true">
+			</div>
+		</div>
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+			<div class="form-group">
+				<label for="num_comprobante">Numero Comprobante</label>
+				<input type="text" name="num_comprobante" id="num_comprobante" value="{{old('num_comprobante')}}" class="form-control" readonly="true">
+			</div>
+		</div>
+		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+			<div class="form-group">
+				<label for="proveedor">Moneda</label>
+				<select name="moneda" class="form-control">
+					<option>Seleccione</option>
+					<option value="01">Soles</option>
+					<option value="02">Dolares</option>
+					<option value="03">Euros</option>
+				</select>
+			</div>
+		</div>
+		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
+			<div class="form-group">
+				<label for="fecha">Fecha</label>
+				<!-- <input type="text" name="fecha" value="{{old('num_comprobante')}}" class="form-control"> -->
+				<div class="input-group date">
+                  <div class="input-group-addon">
+                    <i class="fa fa-calendar"></i>
+                  </div>
+                  <input type="text" class="form-control" id="fecha">
+                </div>
+			</div>
+		</div>
+		<div class="col-lg-5 col-md-5 col-sm-5 col-xs-12">
 			<div class="form-group">
 				<label for="proveedor">Cliente</label>
 				<select name="idcliente" id="idcliente" class="form-control selectpicker" data-live-search="true">
@@ -26,28 +71,6 @@
 						<option value="{{$persona->idpersona}}">{{$persona->nombre}}</option>
 					@endforeach
 				</select>
-			</div>
-		</div>
-		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-			<div class="form-group">
-				<label>Documento</label>
-				<select name="tipo_comprobante" class="form-control">
-					<option value="01">Factura</option>
-					<option value="03">Boleta</option>					
-					<option value="Ticket">Ticket</option>
-				</select>
-			</div>
-		</div>
-		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-			<div class="form-group">
-				<label for="serie_comprobante">Serie Comprobante</label>
-				<input type="text" name="serie_comprobante" value="{{old('serie_comprobante')}}" class="form-control" placeholder="Serie Comprobante...">
-			</div>
-		</div>
-		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-			<div class="form-group">
-				<label for="num_comprobante">Numero Comprobante</label>
-				<input type="text" name="num_comprobante" required value="{{old('num_comprobante')}}" class="form-control" placeholder="Numero Comprobante...">
 			</div>
 		</div>
 	</div>
@@ -134,7 +157,7 @@
 
 		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" id="guardar">
 			<div class="form-group">
-				<input type="hidden" name="_token" value="{{ csrf_token()}}"></input>
+				<input type="hidden" id="_token" name="_token" value="{{ csrf_token()}}"></input>
 				<button class="btn btn-primary" type="submit">Guardar</button>
 				<button class="btn btn-danger" type="reset">Cancelar</button>
 			</div>
@@ -146,9 +169,15 @@
 @push('scripts')
 <script>
 
+	//Date picker
+    
+
 	$(document).ready(function(){
 		$('#bt_add').click(function(){
 			agregar();
+		});
+		$('#fecha').datepicker({
+		  autoclose: true,
 		});
 	});
 
@@ -163,6 +192,32 @@
 		datosArticulo = document.getElementById('pidarticulo').value.split('_');
 		$("#pprecio_venta").val(datosArticulo[2]);
 		$("#pstock").val(datosArticulo[1]);
+	}
+
+	$("#tipo_comprobante").change(setNumCor);
+
+	function setNumCor(){
+		token = $("#_token").val();
+		tc = $("#tipo_comprobante").val();
+		// alert(tc)
+		$.ajax({
+            url: "/venta/peticion",
+            type: "post",
+            headers: {'X-CSRF-TOKEN': token},
+            // dataType: 'json',
+            data: {'tipoComprobante': tc, "token": token},
+            success: function (datos) {
+               $("#serie_comprobante").val(datos['serie']);
+               $("#num_comprobante").val(datos['correlativo']);
+               // console.log(datos)
+            },
+            error: function (data) {
+                console.log(data);
+            }
+        });
+		// datosArticulo = document.getElementById('pidarticulo').value.split('_');
+		// $("#pprecio_venta").val(datosArticulo[2]);
+		// $("#pstock").val(datosArticulo[1]);
 	}
 
 	function agregar(){

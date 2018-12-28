@@ -27,7 +27,11 @@
 					<td>{{$ven->tipo_comprobante.': '.$ven->serie_comprobante.'-'.$ven->num_comprobante}}</td>
 					<td>{{$ven->impuesto}}</td>
 					<td>{{$ven->total_venta}}</td>
-					<td>{{$ven->estado}}</td>
+					<td>@if($ven->response_code=='0')
+								<a class="btn btn-success btn-xs">Aceptado</a>	
+							@else
+								<a class="btn btn-danger btn-xs">Rechazado</a>
+							@endif</td>
 					<td>
 						<a href="{{URL::action('VentaController@show',$ven->idventa)}}">
 							<button class="btn btn-primary">Detalles</button>

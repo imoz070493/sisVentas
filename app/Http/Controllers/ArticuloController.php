@@ -38,7 +38,9 @@ class ArticuloController extends Controller
     public function create()
     {
     	$categorias = DB::table('categoria')->where('condicion','=','1')->get();
-    	return view("almacen.articulo.create",["categorias"=>$categorias]);
+        $marcas = DB::table('marca')->where('condicion','=','1')->get();
+        $unidades = DB::table('unidad_medida')->get();
+    	return view("almacen.articulo.create",["categorias"=>$categorias,"marcas"=>$marcas,"unidades"=>$unidades]);
     }
 
     public function store(ArticuloFormRequest $request)
@@ -49,6 +51,7 @@ class ArticuloController extends Controller
     	$articulo->nombre = $request->get('nombre');
     	$articulo->stock = $request->get('stock');
     	$articulo->descripcion = $request->get('descripcion');
+        $articulo->unidad_medida = $request->get('idunidad');
     	$articulo->estado = 'Activo';
     	
     	if(Input::hasFile('imagen')){

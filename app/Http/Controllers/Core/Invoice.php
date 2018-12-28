@@ -1257,10 +1257,12 @@ class Invoice
     }
 
 
-    public function crearPDF(){
+    public function crearPDF($cliente,$items){
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false,false);
 
+        $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(false);
+
         $pdf->SetTopMargin(63.23889);
         $pdf->SetLeftMargin(5);
         $pdf->SetRightMargin(5);
@@ -1303,14 +1305,19 @@ class Invoice
         $pdf->Ln(0);
         $pdf->SetX(140);
         $pdf->SetFont('helvetica', '', 12);
-        $pdf->MultiCell(65, 8, 'FACTURA ELECTRÓNICA', 'LR', 'C', false, 1, '', '', true, 0, false, true, 8, 'M');
+        if($cliente->tipo_comprobante=='01'){
+            $pdf->MultiCell(65, 8, 'FACTURA ELECTRÓNICA', 'LR', 'C', false, 1, '', '', true, 0, false, true, 8, 'M');
+        }else{
+            $pdf->MultiCell(65, 8, 'BOLETA ELECTRÓNICA', 'LR', 'C', false, 1, '', '', true, 0, false, true, 8, 'M');
+        }
         $pdf->Ln(0);
         $pdf->SetX(140);
         $pdf->SetFont('helvetica', '', 10);
-        $pdf->MultiCell(65, 7, 'FF11' . ' Nº ' . '00000001', 'LRB', 'C', false, 1, '',
+        $pdf->MultiCell(65, 7, $cliente->serie_comprobante . ' Nº ' . $cliente->num_comprobante, 'LRB', 'C', false, 1, '',
             '', true, 0, false, true, 7, 'M');
 
         # Detalle del cliente
+        
         $pdf->SetFont('helvetica', '', 8);
         $pdf->SetXY(5, 29);
         $y = $pdf->GetY();
@@ -1318,7 +1325,7 @@ class Invoice
         $pdf->MultiCell(27, 4, 'SEÑOR (TITULAR)', 1, 'L', true, 1, '', '', true, 0, false, false, $rhm);
         $pdf->SetXY(32, $y);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->MultiCell(100, 4, 'MAESTRO PERU S.A.', 'TR', 'L', false, 1, '', '', true, 0, false,
+        $pdf->MultiCell(100, 4, $cliente->nombre, 'TR', 'L', false, 1, '', '', true, 0, false,
             false, $rhm);
         $pdf->SetXY(5, 33);
         $y = $pdf->GetY();
@@ -1326,7 +1333,7 @@ class Invoice
         $pdf->MultiCell(27, 4, 'DIRECCIÓN', 1, 'L', true);
         $pdf->SetXY(32, $y);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->MultiCell(100, 4, 'JR. SAN LORENZO N° 881 SURQUILLO-LIMA', 'R', 'L', false, 1, '', '', true, 0, false, false,$rhm);
+        $pdf->MultiCell(100, 4, $cliente->direccion, 'R', 'L', false, 1, '', '', true, 0, false, false,$rhm);
         $pdf->SetXY(5, 37);
         $y = $pdf->GetY();
         $pdf->SetTextColor(255, 255, 255);
@@ -1342,7 +1349,7 @@ class Invoice
         $pdf->MultiCell(27, 4, $documentoTipo, 1, 'L', true);
         $pdf->SetXY(32, $y);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->MultiCell(100, 4, '20112273922', 'RB', 'L');
+        $pdf->MultiCell(100, 4, $cliente->num_documento, 'RB', 'L');
         
         # Detalle adicional del documento
         $pdf->SetXY(140, 29);
@@ -1382,7 +1389,7 @@ class Invoice
         $pdf->Ln(0);
         $pdf->SetX(5);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->MultiCell(32, 4, '20112273922', 1, 'C', false, 0);
+        $pdf->MultiCell(32, 4, $cliente->num_documento, 1, 'C', false, 0);
         $pdf->MultiCell(28, 4, '', 1, 'C', false, 0);
         $pdf->MultiCell(35, 4, '', 1, 'C', false, 0);
         $pdf->MultiCell(40, 4, '', 1, 'C', false, 0);
@@ -1412,66 +1419,73 @@ class Invoice
 
         $array = new ArrayObject();
 
-        $item = new stdClass();
-        $item->codigo = "101";
-        $item->descripcion = "LICENCIA DE USO DEL MÓDULO DE COMPRAS";
-        $item->cantidad = "100.00";
-        $item->precio = '100.00';
-        $item->total = '100.00';
-        $array->append($item);
+        $total = 0;
+        foreach ($items as $i) {
+            $item = new stdClass();
+            $item->codigo = $i->codigo;
+            $item->descripcion = $i->nombre;
+            $item->cantidad = $i->cantidad;
+            $item->precio = $i->precio_venta;
+            $item->total = $i->total;
+            $array->append($item);
+            $total = $total + $i->total;
+        }
+
+        $neto = $total / 1.18;
+        $igv = $total - $neto;
 
 
-        $item = new stdClass();
-        $item->codigo = "102";
-        $item->descripcion = "LICENCIA DE USO DEL MÓDULO DE VENTAS";
-        $item->cantidad = "100.00";
-        $item->precio = '100.00';
-        $item->total = '100.00';
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
-        $array->append($item);
+        // $item = new stdClass();
+        // $item->codigo = "102";
+        // $item->descripcion = "LICENCIA DE USO DEL MÓDULO DE VENTAS";
+        // $item->cantidad = "100.00";
+        // $item->precio = '100.00';
+        // $item->total = '100.00';
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
+        // $array->append($item);
 
-        $array2 = $array;
+        // $array2 = $array;
 
         foreach ($array as $key => $value) {
             $y = $pdf->GetY();
@@ -1674,10 +1688,10 @@ class Invoice
         $pdf->MultiCell(20, 4, '', 1, 'R');
         $pdf->SetXY($x + 20, $y);
         $x = $pdf->GetX();
-        $pdf->MultiCell(20, 4, '54.00', 1, 'R');
+        $pdf->MultiCell(20, 4, round($igv,2), 1, 'R');
         $pdf->SetXY($x + 20, $y);
         $x = $pdf->GetX();
-        $pdf->MultiCell(40, 4, '354.00', 1, 'R');
+        $pdf->MultiCell(40, 4, round($total,2), 1, 'R');
 
         $pdf->Ln(1.5);
         $y = $pdf->GetY();
@@ -1702,10 +1716,14 @@ class Invoice
 
         // Close and output PDF document
         // This method has several options, check the source code documentation for more information.
-        $pdf->Output('example_001.pdf', 'I');
+
+        $nombreFactura = $cliente->num_documento."-".$cliente->tipo_comprobante."-".$cliente->serie_comprobante."-".$cliente->num_comprobante.".pdf";
+
+
+        $pdf->Output(public_path().'\cdn/pdf/'.$nombreFactura, 'F');
 
         //============================================================+
-        // END OF FILE
+        // END OF FIL
         //============================================================+
 
 
@@ -1720,7 +1738,8 @@ class Invoice
         $response['message'] = '';
         $message = '';
 
-        $path = 'C:\xampp1\htdocs\sisVentas\public\cdn/cdr\R-20563817161-01-F001-00004483.ZIP';
+        // $path = 'C:\xampp1\htdocs\sisVentas\public\cdn/cdr\R-20536579746-01-F001-00004483.ZIP';
+
 
         if(env('SYSTEM')=='linux')
             $nameExplode = explode('/', $path);
@@ -1732,6 +1751,11 @@ class Invoice
         $name = end($nameExplode);
         $nameCdrExplode = explode('.', $name);
         $nameCdr = reset($nameCdrExplode) . '.XML';
+        if(file_exists($path)){
+            LOG::info("SI EXISTE EL ARCHIVO");
+        }else{
+            LOG::info("NO EXISTE EL ARCHIVO");
+        }
 
         \Zipper::make($path)->extractTo(storage_path('sunat/tmp'));
         $pathCdr = storage_path('sunat/tmp/' . $nameCdr);

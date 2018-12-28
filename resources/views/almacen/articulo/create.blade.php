@@ -24,12 +24,22 @@
 				<input type="text" name="nombre" required value="{{old('nombre')}}" class="form-control" placeholder="Nombre...">
 			</div>
 		</div>
-		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
 			<div class="form-group">
 				<label>Categoria</label>
 				<select name="idcategoria" class="form-control">
 					@foreach($categorias as $cat)
 						<option value="{{$cat->idcategoria}}">{{$cat->nombre}}</option>
+					@endforeach
+				</select>
+			</div>
+		</div>
+		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
+			<div class="form-group">
+				<label>Marca</label>
+				<select name="idmarca" class="form-control">
+					@foreach($marcas as $mar)
+						<option value="{{$mar->idmarca}}">{{$mar->nombre}}</option>
 					@endforeach
 				</select>
 			</div>
@@ -40,10 +50,20 @@
 				<input type="text" name="codigo" required value="{{old('codigo')}}" class="form-control" placeholder="Codigo del Articulo...">
 			</div>
 		</div>
-		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
 			<div class="form-group">
 				<label for="nombre">Stock</label>
 				<input type="text" name="stock" required value="{{old('stock')}}" class="form-control" placeholder="Stock...">
+			</div>
+		</div>
+		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
+			<div class="form-group">
+				<label>Und. Medida</label>
+				<select name="idunidad" class="form-control">
+					@foreach($unidades as $und)
+						<option value="{{$und->idunidad_medida}}">{{$und->titulo}}</option>
+					@endforeach
+				</select>
 			</div>
 		</div>
 		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
