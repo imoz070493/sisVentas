@@ -33,7 +33,7 @@
 			<div class="form-group">
 				<label>Documento</label>
 				<select name="tipo_documento" class="form-control">
-				 @if($persona->tipo_documento=='DNI')
+				@if($persona->tipo_documento=='DNI')
 				 	<option value="DNI" selected>DNI</option>
 					<option value="RUC">RUC</option>
 					<option value="PAS">PAS</option>
@@ -71,6 +71,7 @@
 			<div class="form-group">
 				<button class="btn btn-primary" type="submit">Guardar</button>
 				<button class="btn btn-danger" type="reset">Cancelar</button>
+				<a class="btn btn-info" href="{{ asset('compras/proveedor') }}">Regresar</a>
 			</div>
 		</div>
 	</div>

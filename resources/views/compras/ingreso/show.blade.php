@@ -58,6 +58,7 @@
 						</tfood>
 						
 					</table>
+					<a class="btn btn-info" href="{{ asset('compras/ingreso') }}">Regresar</a>
 				</div>
 			</div>
 		</div>
