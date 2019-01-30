@@ -29,7 +29,8 @@ class ArticuloController extends Controller
     			->where('a.nombre','LIKE','%'.$query.'%')
     			->orwhere('a.codigo','LIKE','%'.$query.'%')
     			->orderBy('idarticulo','desc')
-    			->paginate(7);
+                ->get();
+    			// ->paginate(7);
     		return view('almacen.articulo.index',["articulos"=>$articulos,"searchText"=>$query]);
     	}
 

@@ -9,6 +9,7 @@ use RobRichards\XMLSecLibs\XMLSecurityKey;
 
 use sisVentas\Persona;
 use sisVentas\Articulo;
+use DB;
 
 use Exception;
 use stdClass;
@@ -153,8 +154,16 @@ class Invoice
         $response['message'] = '';
         $response['client'] = '';
         try {
-            $user = '20563817161MODDATOS';
-            $password = 'MODDATOS';
+
+            $empresa = DB::table('config')
+            ->where('estado','=','1')
+            ->first();
+
+            $user = $empresa->ruc.$empresa->usuario;
+            $password = $empresa->clave;
+
+            // $user = '20563817161MODDATOS';
+            // $password = 'MODDATOS';
             $wsdl = null;
             switch ($sunatServer) {
                 case 'beta':
@@ -214,7 +223,7 @@ class Invoice
         return $response;
     }
 
-    public static function buildInvoiceXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta)
+    public static function buildInvoiceXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta,$ruc)
     {
     	$dom = new DOMDocument('1.0', 'UTF-8');
         #$dom->preserveWhiteSpace = false;
@@ -378,7 +387,7 @@ class Invoice
         $signatoryParty->appendChild($partyIdentification);
 
         $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = '20563817161';
+        $cbcID->nodeValue = $ruc;
         $partyIdentification->appendChild($cbcID);
 
         $partyName = $dom->createElement('cac:PartyName');
@@ -420,7 +429,7 @@ class Invoice
         $cbcID->appendChild($schemeName);
         $cbcID->appendChild($schemeAgencyName);
         $cbcID->appendChild($schemeURI);
-        $cbcID->nodeValue = '20563817161';
+        $cbcID->nodeValue = $ruc;
         $partyIdentification->appendChild($cbcID);
 
         $partyName = $dom->createElement('cac:PartyName');
@@ -451,7 +460,7 @@ class Invoice
         $companyID->appendChild($schemeName);
         $companyID->appendChild($schemeAgencyName);
         $companyID->appendChild($schemeURI);
-        $companyID->nodeValue = '20563817161';
+        $companyID->nodeValue = $ruc;
         $partyTaxScheme->appendChild($companyID);
 
         $taxScheme = $dom->createElement('cac:TaxScheme');
@@ -470,7 +479,7 @@ class Invoice
         $cbcID->appendChild($schemeName);
         $cbcID->appendChild($schemeAgencyName);
         $cbcID->appendChild($schemeURI);
-        $cbcID->nodeValue = '20563817161';
+        $cbcID->nodeValue = $ruc;
         $taxScheme->appendChild($cbcID);
 
         $partyLegalEntity = $dom->createElement('cac:PartyLegalEntity');
@@ -1166,7 +1175,7 @@ class Invoice
 
 
         // $xmlName = sprintf('%s-%s-%s', "Prueba", '01',1);
-        $xmlName = "20563817161-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
+        $xmlName = $ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
         $xmlPath = public_path().'\cdn/xml/'. $xmlName . '.XML';
         $xmlFullPath = $xmlPath;
         file_exists($xmlFullPath) ? unlink($xmlFullPath) : '';
@@ -1257,7 +1266,7 @@ class Invoice
     }
 
 
-    public function crearPDF($cliente,$items){
+    public function crearPDF($empresa,$cliente,$items, $leyenda){
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false,false);
 
         $pdf->setPrintHeader(false);
@@ -1285,22 +1294,22 @@ class Invoice
 
         # Breve descripción de la empresa emisora
         $rhm = $pdf->getStringHeight(0, 'string');
-        $pdf->MultiCell(74, 0, 'CAL. AGUSTIN DE LA TORRE GONZALES NRO. 194', 'L', 'L', false, 1, '', '', true, 0, false,
+        $pdf->MultiCell(74, 0, $empresa->direccion, 'L', 'L', false, 1, '', '', true, 0, false,
             false, $rhm);
         $pdf->SetX($x);
-        $pdf->MultiCell(74, 0, 'SAN ISIDRO LIMA PERU', 'L', 'L', false, 1, '', '', true, 0, false,
+        $pdf->MultiCell(74, 0, $empresa->distrito.' '.$empresa->provincia.' '.$empresa->departamento.' PERU', 'L', 'L', false, 1, '', '', true, 0, false,
             false, $rhm);
 
         $pdf->SetX($x);
-        $pdf->MultiCell(74, 4, 'Tel.: ' . '721-2783', 'L', 'L');
+        $pdf->MultiCell(74, 4, 'Tel.: ' . $empresa->telefono, 'L', 'L');
          
         $pdf->SetX($x);
-        $pdf->MultiCell(74, 4, 'E-mail: ' . 'www.avanzasoluciones.com.pe', 'L', 'L');
+        $pdf->MultiCell(74, 4, 'E-mail: ' . $empresa->correo, 'L', 'L');
         
         # Descripción del documento
         $pdf->SetXY(140, 5);
         $pdf->SetFont('helvetica', '', 10);
-        $pdf->MultiCell(65, 7, 'R.U.C. ' . '20524719585', 'LTR', 'C', false, 1, '', '', true, 0, false,
+        $pdf->MultiCell(65, 7, 'R.U.C. ' . $empresa->ruc, 'LTR', 'C', false, 1, '', '', true, 0, false,
             true, 7, 'M');
         $pdf->Ln(0);
         $pdf->SetX(140);
@@ -1570,7 +1579,7 @@ class Invoice
         
             $append[] = '';
         
-            $append[] = 'TRESCIENTOS CINCUENTICUATRO Y 00/100 SOLES';
+            $append[] = 'SON: '.$leyenda;
         
             $append[] = "S.E.U.O.";
         
@@ -1717,7 +1726,7 @@ class Invoice
         // Close and output PDF document
         // This method has several options, check the source code documentation for more information.
 
-        $nombreFactura = $cliente->num_documento."-".$cliente->tipo_comprobante."-".$cliente->serie_comprobante."-".$cliente->num_comprobante.".pdf";
+        $nombreFactura = $empresa->ruc."-".$cliente->tipo_comprobante."-".$cliente->serie_comprobante."-".$cliente->num_comprobante.".pdf";
 
 
         $pdf->Output(public_path().'\cdn/pdf/'.$nombreFactura, 'F');
@@ -1942,4 +1951,68 @@ class Invoice
     }
 
 
+    public function pdfPrueba(){
+        // create new PDF document
+        $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+
+        // set document information
+        $pdf->SetCreator(PDF_CREATOR);
+        $pdf->SetAuthor('Nicola Asuni');
+        $pdf->SetTitle('TCPDF Example 028');
+        $pdf->SetSubject('TCPDF Tutorial');
+        $pdf->SetKeywords('TCPDF, PDF, example, test, guide');
+
+        // remove default header/footer
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+
+        // set default monospaced font
+        $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+
+        // set margins
+        $pdf->SetMargins(0, PDF_MARGIN_TOP, 0);
+
+        // set auto page breaks
+        $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+
+        // set image scale factor
+        $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+
+        // set some language-dependent strings (optional)
+        if (@file_exists(dirname(__FILE__).'/lang/eng.php')) {
+            require_once(dirname(__FILE__).'/lang/eng.php');
+            $pdf->setLanguageArray($l);
+        }
+
+        // ---------------------------------------------------------
+
+        $pdf->SetDisplayMode('fullpage', 'SinglePage', 'UseNone');
+
+        // set font
+        $pdf->SetFont('times', 'B', 20);
+
+        $pdf->AddPage('P', 'A4');
+        $pdf->Cell(0, 0, 'A4 PORTRAIT', 1, 1, 'C');
+        $pdf->AddPage('P', 'A4');
+
+        // --- test backward editing ---
+
+        $pdf->setPage(1, true);
+        $pdf->SetY(0);
+        $pdf->Cell(0, 0, 'A4 test', 1, 1, 'C');
+
+        
+        $pdf->setPage(2, true);
+        $pdf->SetY(0);
+        $pdf->Cell(0, 0, 'A4 PAGE2  test', 1, 1, 'C');
+
+        // ---------------------------------------------------------
+
+        //Close and output PDF document
+        $pdf->Output('example_028.pdf', 'I');
+
+        //============================================================+
+        // END OF FILE
+        //============================================================+
+    }
 }

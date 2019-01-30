@@ -20,6 +20,9 @@
     <link rel="apple-touch-icon" href="{{asset('img/apple-touch-icon.png')}}">
     <link rel="shortcut icon" href="{{asset('img/favicon.ico')}}">
 
+    <!-- DataTables -->
+    <link rel="stylesheet" href="{{asset('bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css')}}">
+
   </head>
   <body class="hold-transition skin-blue sidebar-mini">
     <div class="wrapper">
@@ -49,15 +52,15 @@
               <li class="dropdown user user-menu">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                   <small class="bg-red">Online</small>
-                  <span class="hidden-xs">Juan Carlos Arcila Díaz</span>
+                  <span class="hidden-xs">{{ Auth::user()->name }}</span>
                 </a>
                 <ul class="dropdown-menu">
                   <!-- User image -->
                   <li class="user-header">
                     
                     <p>
-                      www.incanatoit.com - Desarrollando Software
-                      <small>www.youtube.com/jcarlosad7</small>
+                      www.perusi.pe
+                      <small>Desarrollando Software</small>
                     </p>
                   </li>
                   
@@ -118,6 +121,7 @@
               </a>
               <ul class="treeview-menu">
                 <li><a href="{{url('ventas/venta')}}"><i class="fa fa-circle-o"></i> Ventas</a></li>
+                <li><a href="{{url('ventas/notas')}}"><i class="fa fa-circle-o"></i> Nota Credito/Debito</a></li>
                 <li><a href="{{url('ventas/cliente')}}"><i class="fa fa-circle-o"></i> Clientes</a></li>
               </ul>
             </li>
@@ -130,6 +134,16 @@
               <ul class="treeview-menu">
                 <li><a href="{{url('seguridad/usuario')}}"><i class="fa fa-circle-o"></i> Usuarios</a></li>
                 
+              </ul>
+            </li>
+            <li class="treeview">
+              <a href="#">
+                <i class="fa fa-folder"></i> <span>Facturacion Electronica</span>
+                <i class="fa fa-angle-left pull-right"></i>
+              </a>
+              <ul class="treeview-menu">
+                <li><a href="{{url('ventas/resumenbo')}}"><i class="fa fa-circle-o"></i> Resumen Boletas</a></li>
+                <li><a href="{{url('ventas/resumenba')}}"><i class="fa fa-circle-o"></i> Resumen Bajas</a></li>
               </ul>
             </li>
             <li class="treeview">
@@ -219,6 +233,23 @@
     <!-- AdminLTE App -->
     <script src="{{asset('js/app.min.js')}}"></script>
     <script src="{{asset('js/bootstrap-datepicker.min.js')}}"></script>
+
+    <!-- DataTables -->
+    <script src="{{asset('js/jquery.dataTables.min.js')}}"></script>
+    <script src="{{asset('js/dataTables.bootstrap.min.js')}}"></script>
+
+    <script type="text/javascript">
+      $(function () {
+        $('#example2').DataTable({
+          'paging'      : true,
+          'lengthChange': false,
+          'searching'   : false,
+          'ordering'    : true,
+          'info'        : true,
+          'autoWidth'   : false
+        })
+      })
+    </script>
     
   </body>
 </html>

@@ -10,7 +10,7 @@
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
 		<div class="table-responsive">
-			<table class="table table-striped table-bordered table-condensed table-hover">
+			<table id="example2" class="table table-bordered table-striped">
 				<thead>
 					<th>Id</th>
 					<th>Nombre</th>
@@ -43,7 +43,7 @@
 				@endforeach
 			</table>
 		</div>
-		{{$articulos->render()}}
+		
 	</div>
 </div>
 @endsection

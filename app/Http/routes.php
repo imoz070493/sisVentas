@@ -21,6 +21,14 @@ Route::resource('almacen/categoria','CategoriaController');
 
 Route::post('venta/peticion', 'VentaController@peticion');
 
+Route::post('notas/peticion', 'NotasController@peticion');
+
+Route::post('notas/detalle', 'NotasController@detalle');
+
+Route::post('resumen/enviar', 'ResumenBoletaController@enviar');
+
+Route::post('resumenbaja/enviar', 'ResumenBajaController@enviar');
+
 Route::resource('venta/pdf', 'VentaController@crearPDF');
 
 Route::resource('almacen/articulo','ArticuloController');
@@ -33,9 +41,17 @@ Route::resource('compras/ingreso','IngresoController');
 
 Route::resource('ventas/venta','VentaController');
 
+Route::resource('ventas/notas','NotasController');
+
+Route::resource('ventas/resumenbo','ResumenBoletaController');
+
+Route::resource('ventas/resumenba','ResumenBajaController');
+
 Route::resource('seguridad/usuario','UsuarioController');
 
 Route::resource('seguridad/configuracion','ConfiguracionController');
+
+Route::resource('venta/pdfPrueba', 'VentaController@pdf');
 
 Route::auth();
 

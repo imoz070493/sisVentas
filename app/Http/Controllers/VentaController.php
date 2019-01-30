@@ -45,7 +45,12 @@ class VentaController extends Controller
             LOG::info("---------------------------------");
             LOG::info("RESPUESTA DESDE EL METODO INDEX");
             LOG::info("---------------------------------");
-    		return view('ventas.venta.index',["ventas"=>$ventas,"searchText"=>$query]);
+
+            $empresa = DB::table('config')
+            ->where('estado','=','1')
+            ->first();
+
+    		return view('ventas.venta.index',["ventas"=>$ventas,"searchText"=>$query, "ruc" => $empresa->ruc]);
     	}
 
     }
@@ -121,10 +126,14 @@ class VentaController extends Controller
         $descuento = $request->get('descuento');
         $precio_venta = $request->get('precio_venta');
 
-        $invoice = new Core\Invoice();
-        $invoice->buildInvoiceXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta);
+        $empresa = DB::table('config')
+            ->where('estado','=','1')
+            ->first();
 
-        $factura = "20563817161-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
+        $invoice = new Core\Invoice();
+        $invoice->buildInvoiceXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta, $empresa->ruc);
+
+        $factura = $empresa->ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
         $invoice->enviarFactura($factura);
         $path = public_path('cdn/cdr\R-'.$factura.'.ZIP');
         LOG::info($path);
@@ -148,7 +157,7 @@ class VentaController extends Controller
             ->where('v.idventa','=',$venta->idventa)
             ->get();
         
-        $invoice->crearPDF($cliente,$items);
+        $invoice->crearPDF($empresa,$cliente,$items, $leyenda);
 
 
     	return Redirect::to('ventas/venta');
@@ -208,5 +217,10 @@ class VentaController extends Controller
             'correlativo' => str_pad($num_comprobante + 1,  8, "0", STR_PAD_LEFT),
             // 'ventas'=>$ventas
         ]);
+    }
+
+    public function pdf(){
+        $invoice = new Core\Invoice();
+        $invoice->pdfPrueba();
     }
 }

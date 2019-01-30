@@ -37,6 +37,9 @@
 							<button class="btn btn-primary">Detalles</button>
 						</a>
 						<a href="" data-target="#modal-delete-{{$ven->idventa}}" data-toggle="modal"><button class="btn btn-danger">Anular</button></a>
+						<a href="{{ asset('cdn/pdf/'.$ruc.'-'.$ven->tipo_comprobante.'-'.$ven->serie_comprobante.'-'.$ven->num_comprobante.'.pdf') }}" target="_blank"><button class="btn btn-danger">PDF</button></a>
+						<a href="" target="_blank"><button class="btn btn-danger">PDF OTHER</button></a>
+
 					</td>
 				</tr>
 				@include('ventas.venta.modal')
