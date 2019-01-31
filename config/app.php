@@ -159,6 +159,8 @@ return [
 
         Chumper\Zipper\ZipperServiceProvider::class,
 
+        Maatwebsite\Excel\ExcelServiceProvider::class,
+
 
     ],
 
@@ -209,6 +211,10 @@ return [
         'Html' => Collective\Html\HtmlFacade::class,
 
         'Zipper' => Chumper\Zipper\Zipper::class,
+
+        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
+
+
     ],
 
 ];

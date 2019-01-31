@@ -57,6 +57,12 @@ Route::resource('seguridad/configuracion','ConfiguracionController');
 
 Route::resource('venta/pdfPrueba', 'VentaController@pdf');
 
+Route::get('/export-users-excel','ExcelController@exportUsersExcel');
+
+Route::get('/export-users-pdf','ExcelController@exportUsersPdf');
+
+Route::get('/enviar-correo','ExcelController@enviarCorreo');
+
 Route::auth();
 
 Route::resource('almacen/marca','MarcaController');
@@ -65,3 +71,5 @@ Route::resource('almacen/marca','MarcaController');
 Route::get('/home', 'HomeController@index');
 
 Route::get('/{slug?}', 'HomeController@index');
+
+
