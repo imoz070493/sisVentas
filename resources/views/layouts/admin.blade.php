@@ -52,7 +52,7 @@
               <!-- User Account: style can be found in dropdown.less -->
               <li class="dropdown user user-menu">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <small class="bg-red">Online</small>
+                  <small class="bg-red">Online  </small>
                   <span class="hidden-xs">{{ Auth::user()->name }}</span>
                 </a>
                 <ul class="dropdown-menu">
@@ -89,20 +89,23 @@
           <!-- sidebar menu: : style can be found in sidebar.less -->
           <ul class="sidebar-menu">
             <li class="header"></li>
+            <!-- @foreach(Session::get('val1') as $ven)
+              @if($ven->codigo==1) -->
+                <li class="treeview">                    
+                  <a href="#">
+                    <i class="fa fa-laptop"></i>
+                    <span>Almacén</span>
+                    <i class="fa fa-angle-left pull-right"></i>
+                  </a>
+                  <ul class="treeview-menu">
+                    <li><a href="{{url('almacen/articulo')}}"><i class="fa fa-circle-o"></i> Artículos</a></li>
+                    <li><a href="{{url('almacen/categoria')}}"><i class="fa fa-circle-o"></i> Categorías</a></li>
+                    <li><a href="{{url('almacen/marca')}}"><i class="fa fa-circle-o"></i> Marca</a></li>
+                  </ul>
+                </li>
+              <!-- @endif
             
-            <li class="treeview">
-              <a href="#">
-                <i class="fa fa-laptop"></i>
-                <span>Almacén</span>
-                <i class="fa fa-angle-left pull-right"></i>
-              </a>
-              <ul class="treeview-menu">
-                <li><a href="{{url('almacen/articulo')}}"><i class="fa fa-circle-o"></i> Artículos</a></li>
-                <li><a href="{{url('almacen/categoria')}}"><i class="fa fa-circle-o"></i> Categorías</a></li>
-                <li><a href="{{url('almacen/marca')}}"><i class="fa fa-circle-o"></i> Marca</a></li>
-              </ul>
-            </li>
-            
+            @if($ven->codigo==2) -->
             <li class="treeview">
               <a href="#">
                 <i class="fa fa-th"></i>
@@ -114,6 +117,8 @@
                 <li><a href="{{url('compras/proveedor')}}"><i class="fa fa-circle-o"></i> Proveedores</a></li>
               </ul>
             </li>
+            <!-- @endif
+            @if($ven->codigo==3) -->
             <li class="treeview">
               <a href="#">
                 <i class="fa fa-shopping-cart"></i>
@@ -126,7 +131,8 @@
                 <li><a href="{{url('ventas/cliente')}}"><i class="fa fa-circle-o"></i> Clientes</a></li>
               </ul>
             </li>
-                       
+            <!-- @endif
+            @if($ven->codigo==4) -->
             <li class="treeview">
               <a href="#">
                 <i class="fa fa-folder"></i> <span>Acceso</span>
@@ -137,6 +143,8 @@
                 
               </ul>
             </li>
+            <!-- @endif
+            @if($ven->codigo==5) -->
             <li class="treeview">
               <a href="#">
                 <i class="fa fa-folder"></i> <span>Facturacion Electronica</span>
@@ -147,6 +155,8 @@
                 <li><a href="{{url('ventas/resumenba')}}"><i class="fa fa-circle-o"></i> Resumen Bajas</a></li>
               </ul>
             </li>
+            <!-- @endif
+            @if($ven->codigo==6) -->
             <li class="treeview">
               <a href="#">
                 <i class="fa fa-folder"></i> <span>Configuración</span>
@@ -154,22 +164,26 @@
               </a>
               <ul class="treeview-menu">
                 <li><a href="{{url('seguridad/configuracion')}}"><i class="fa fa-circle-o"></i> Perfil</a></li>
-                
               </ul>
             </li>
+            <!-- @endif
+            @if($ven->codigo==7) -->
             <li>
               <a href="#">
                 <i class="fa fa-plus-square"></i> <span>Ayuda</span>
                 <small class="label pull-right bg-red">PDF</small>
               </a>
             </li>
+            <!-- @endif
+            @if($ven->codigo==8) -->
             <li>
               <a href="#">
                 <i class="fa fa-info-circle"></i> <span>Acerca De...</span>
                 <small class="label pull-right bg-yellow">IT</small>
               </a>
             </li>
-                        
+            <!-- @endif
+            @endforeach -->
           </ul>
         </section>
         <!-- /.sidebar -->

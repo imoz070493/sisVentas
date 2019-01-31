@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Input;
 use sisVentas\Http\Requests\VentaFormRequest;
 use sisVentas\Venta;
+use sisVentas\Permiso;
 use sisVentas\DetalleVenta;
 use DB;
 
@@ -49,6 +50,13 @@ class VentaController extends Controller
             $empresa = DB::table('config')
             ->where('estado','=','1')
             ->first();
+
+            $permiso = DB::table('permiso')
+                ->where('idrol','=',\Auth::user()->idrol)
+                ->orderBy('idrol','desc')
+                ->get();
+
+            $request->session()->put('val1',$permiso);
 
     		return view('ventas.venta.index',["ventas"=>$ventas,"searchText"=>$query, "ruc" => $empresa->ruc]);
     	}
