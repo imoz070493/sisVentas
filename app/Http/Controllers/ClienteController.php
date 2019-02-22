@@ -29,6 +29,14 @@ class ClienteController extends Controller
     			->where('tipo_persona','=','Cliente')
     			->orderBy('idpersona','desc')
     			->paginate(7);
+
+            $permiso = DB::table('permiso')
+                ->where('idrol','=',\Auth::user()->idrol)
+                ->orderBy('idrol','desc')
+                ->get();
+
+            $request->session()->put('permiso',$permiso);
+            
     		return view('ventas.cliente.index',["personas"=>$personas,"searchText"=>$query]);
     	}
 

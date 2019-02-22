@@ -24,8 +24,20 @@ class ConfiguracionFormRequest extends Request
     public function rules()
     {
         return [
-            'column1' => 'required',
-            'column2' => 'required'
+            'ruc' => 'required',
+            'razon_social' => 'required',
+            'nombre_comercial' => 'required',
+            'direccion' => 'required',
+            'departamento' => 'required',
+            'provincia' => 'required',
+            'distrito' => 'required',
+            'codpais' => 'required',
+            'ubigeo' => 'required',
+            'telefono' => 'required',
+            'correo' => 'required',
+            'usuario' => 'required',
+            'clave' => 'required',
+            'firma' => 'max:256'
         ];
     }
 }

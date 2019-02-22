@@ -32,7 +32,7 @@
 						@endif
 					</td>
 					<td>
-						@if($per->estado==0)
+						@if($per->estado==1)
 							Activo
 						@else
 							Inactivo

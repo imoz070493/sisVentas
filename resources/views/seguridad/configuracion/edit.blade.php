@@ -43,7 +43,7 @@
 				<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
 					<div class="form-group">
 						<label for="departamento">Departamento</label>
-						<input type="text" name="ruc" class="form-control" value="{{$perfil->departamento}}">
+						<input type="text" name="departamento" class="form-control" value="{{$perfil->departamento}}">
 					</div>
 				</div>
 				<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">

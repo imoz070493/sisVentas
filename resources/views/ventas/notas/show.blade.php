@@ -10,7 +10,13 @@
 		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
 			<div class="form-group">
 				<label>Documento</label>
-				<p>{{$venta->tipo_comprobante}}</p>
+				<p>
+					@if($venta->tipo_comprobante=='07')
+						Nota de Credito
+					@elseif($venta->tipo_comprobante=='08')
+						Nota de Debito
+					@endif
+				</p>
 			</div>
 		</div>
 		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
@@ -58,7 +64,7 @@
 						</tfood>
 						
 					</table>
-					<a class="btn btn-info" href="{{ asset('ventas/venta') }}">Regresar</a>
+					<a class="btn btn-info" href="{{ asset('ventas/notas') }}">Regresar</a>
 				</div>
 			</div>
 		</div>

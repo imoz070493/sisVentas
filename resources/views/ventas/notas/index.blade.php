@@ -2,7 +2,7 @@
 @section('contenido')
 <div class="row">
 	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-		<h3>Listado de Ventas <a href="notas/create"><button class="btn btn-success">Nuevo</button></a> </h3>
+		<h3>Notas Credito/Debito <a href="notas/create"><button class="btn btn-success">Nuevo</button></a> </h3>
 		@include('ventas.venta.search')
 	</div>
 </div>
@@ -33,20 +33,19 @@
 								<a class="btn btn-danger btn-xs">Rechazado</a>
 							@endif</td>
 					<td>
-						<a href="{{URL::action('VentaController@show',$ven->idventa)}}">
+						<a href="{{URL::action('NotasController@show',$ven->idventa)}}">
 							<button class="btn btn-primary">Detalles</button>
 						</a>
-						<a href="" data-target="#modal-delete-{{$ven->idventa}}" data-toggle="modal"><button class="btn btn-danger">Anular</button></a>
+						<!-- <a href="" data-target="#modal-delete-{{$ven->idventa}}" data-toggle="modal"><button class="btn btn-danger">Anular</button></a> -->
 						<a href="{{ asset('cdn/pdf/'.$ruc.'-'.$ven->tipo_comprobante.'-'.$ven->serie_comprobante.'-'.$ven->num_comprobante.'.pdf') }}" target="_blank"><button class="btn btn-danger">PDF</button></a>
-						<a href="" target="_blank"><button class="btn btn-danger">PDF OTHER</button></a>
 
 					</td>
 				</tr>
-				@include('ventas.venta.modal')
+				@include('ventas.notas.modal')
 				@endforeach
 			</table>
 		</div>
-		{{$ventas->render()}}
+		{{--$ventas->render()--}}
 	</div>
 </div>
 @endsection

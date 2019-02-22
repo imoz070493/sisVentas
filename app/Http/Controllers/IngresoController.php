@@ -22,7 +22,7 @@ class IngresoController extends Controller
     public function __construct()
     {
         $this->middleware('auth');        
-        $this->middleware('administrador');
+        $this->middleware('permisoCompras');
     }
 
     public function index(Request $request)
@@ -38,6 +38,15 @@ class IngresoController extends Controller
     			->orderBy('i.idingreso','desc')
     			->groupBy('i.idingreso','i.fecha_hora','p.nombre','i.tipo_comprobante','i.serie_comprobante','i.impuesto','i.estado')
     			->paginate(7);
+
+
+            $permiso = DB::table('permiso')
+                ->where('idrol','=',\Auth::user()->idrol)
+                ->orderBy('idrol','desc')
+                ->get();
+
+            $request->session()->put('permiso',$permiso);
+
     		return view('compras.ingreso.index',["ingresos"=>$ingresos,"searchText"=>$query]);
     	}
 

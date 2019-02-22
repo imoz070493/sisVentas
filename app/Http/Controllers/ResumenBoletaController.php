@@ -3,6 +3,7 @@
 namespace sisVentas\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Validator;
 
 use sisVentas\Http\Requests;
 
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Input;
 use sisVentas\Http\Requests\ResumenBoletaFormRequest;
 use sisVentas\Venta;
+use sisVentas\ResumenBoleta;
 use sisVentas\DetalleVenta;
 use DB;
 
@@ -26,6 +28,7 @@ class ResumenBoletaController extends Controller
     public function __construct()
     {
     	$this->middleware('auth');
+        $this->middleware('permisoFE');
     }
 
     public function index(Request $request)
@@ -36,10 +39,17 @@ class ResumenBoletaController extends Controller
     		$query = trim($request->get('searchText'));
     		$resumen = DB::table('resumen')
     			->select('*')
-    			->where('codigo','=','RC')
+    			->where('tipo','=','0')
     			->orderBy('idresumen','desc')
     			->groupBy('idresumen','ticket')
     			->get();
+
+            $permiso = DB::table('permiso')
+                ->where('idrol','=',\Auth::user()->idrol)
+                ->orderBy('idrol','desc')
+                ->get();
+
+            $request->session()->put('permiso',$permiso);
 
     		return view('ventas.resumenboleta.index',["resumen"=>$resumen,"searchText"=>$query]);
     	}
@@ -247,28 +257,103 @@ class ResumenBoletaController extends Controller
 
     public function enviar(Request $request){
         $fecha = $_POST['txtFECHA_DOCUMENTO'];
-        $boletas = DB::table('venta')
-                ->select('*')
+
+        $time = strtotime($fecha);
+
+        $nuevaFecha = date('Y-m-d',$time);
+
+
+
+
+        if($nuevaFecha == date("Y-m-d")){
+            $fechaTo = $nuevaFecha.' '.date("H:i:s");
+        }else{
+            $fechaTo = $nuevaFecha.' 23:59:59';
+        }
+
+        $comprobantes = DB::table('venta as v')
+                ->join('persona as p','v.idcliente','=','p.idpersona')
+                ->select('v.idventa','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante','v.estado','v.total_venta','v.impuesto','p.num_documento')
                 ->where('tipo_comprobante','=','03')
-                ->where('response_code','=',null)
+                ->where('estado','=','0')
+                ->whereBetween('fecha_hora', [$nuevaFecha, $fechaTo])
                 ->orderBy('idventa','desc')
                 ->get();
+        // dd($comprobantes);
+        $empresa = DB::table('config')
+            ->where('estado','=','1')
+            ->first();
 
-        $summaryDocument = new Core\SummaryDocumentsCore();
-        // $summaryDocument->buildSummaryDocumentXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta, $empresa->ruc);
-        $summaryDocument->buildSummaryDocumentXml('$idcliente','$tipo_comprobante','$serie_comprobante','$num_comprobante','$total_venta','$leyenda','$fecha','$hora','$idarticulo','$cantidad','$precio_venta', '$empresa->ruc');
+        $resumenBoleta = DB::table('resumen')
+                ->select('*')
+                ->where('codigo','=','RC')
+                ->where('serie','=',date("Ymd"))
+                ->orderBy('idresumen','desc')
+                ->first();
+        if(is_null($resumenBoleta)){
+            $num_comprobante=0;
+        }else{
+            $num_comprobante = $resumenBoleta->numero;
+        }
+        
+        $numero_comprobante = $num_comprobante + 1;
+        $referenceDate = $nuevaFecha;
+        // dd($referenceDate);
+        $issueDate = date("Y-m-d");
+        $numDate = date("Ymd");
+        
+        if(!empty($comprobantes)){
+            $summaryDocument = new Core\SummaryDocumentsCore();
+            // $summaryDocument->buildSummaryDocumentXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta, $empresa->ruc);
+            $summaryDocument->buildSummaryDocumentXml($empresa,$referenceDate,$issueDate,$numDate,$numero_comprobante,$comprobantes);
 
-        // $factura = $empresa->ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
-        $factura = "20480072872-RC-20171218-900";
-        $summaryDocument->enviarFactura($factura);
-        $path = public_path('cdn/cdr\R-'.$factura.'.ZIP');
-        LOG::info($path);
-        $responseCdr = $summaryDocument->readCdr('',$path,$tipo_comprobante);
+            $tipo_comprobante = 'RC';
 
-        // $v = Venta::findOrFail($venta->idventa);
-        // $v->response_code=$responseCdr['code'];
-        // $v->descripcion_code=$responseCdr['message'];
-        // $v->update();
+            // $factura = $empresa->ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
+            $factura = $empresa->ruc.'-'.$tipo_comprobante.'-'.$numDate.'-'.$numero_comprobante;
+
+            $summaryDocument->enviarFactura($factura);
+            $path = public_path('cdn/cdr\R-'.$factura.'.ZIP');
+            LOG::info($path);
+            $responseCdr = $summaryDocument->readCdr('',$path,$tipo_comprobante);
+
+            $invoice = new Core\Invoice();
+            $response = $invoice->readSignDocument(public_path('cdn/document/prueba\\'.$factura.'.ZIP'));
+            $hashDocument =  $response['sign'];
+
+            $response = $invoice->readSignDocumentCdr($path);
+            $hashDocumentCdr =  $response['sign'];
+            $ticketDocument = $response['id'];
+
+            if($responseCdr['code']=='0'){
+                foreach ($comprobantes as $comprobante) {
+                    $v = Venta::findOrFail($comprobante->idventa);
+                    $v->estado='2';
+                    $v->update();
+                }
+
+                $baja = new ResumenBoleta();
+                // 4 - RESUMEN DE BAJAS, 0 - RESUMEN DE BOLETAS
+                $baja->tipo = '0';
+                $baja->codigo = 'RC';
+                $baja->serie = $numDate;
+                $baja->numero = $numero_comprobante;
+                $baja->estado = '2';
+                $baja->hash = $hashDocument;
+                $baja->hash_cdr = $hashDocumentCdr;
+                $baja->mensaje = $responseCdr['message'];
+                $baja->ticket = $ticketDocument;
+                $baja->fecha_documento = $referenceDate;
+                $baja->fecha = $issueDate;
+                $baja->save();
+            }    
+            return Redirect::to('ventas/resumenbo');
+        }else{
+            return Redirect::back()->withErrors(['NO HAY BOLETAS PARA EL ENVIO']);
+        }
+        
+
+        
         
     }
     

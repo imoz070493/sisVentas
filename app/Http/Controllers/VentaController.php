@@ -27,6 +27,7 @@ class VentaController extends Controller
     public function __construct()
     {
     	$this->middleware('auth');
+        $this->middleware('permisoVentas');
     }
 
     public function index(Request $request)
@@ -40,12 +41,16 @@ class VentaController extends Controller
     			->join('detalle_venta as dv','v.idventa','=','dv.idventa')
     			->select('v.idventa','v.fecha_hora','p.nombre','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante','v.impuesto','v.estado','v.total_venta','v.response_code')
     			->where('v.num_comprobante','LIKE','%'.$query.'%')
-    			->orderBy('v.idventa','desc')
+                ->where('v.tipo_comprobante','=','01')
+                ->orWhere('v.tipo_comprobante','=','03')
+    			->orderBy('v.idventa','des')
     			->groupBy('v.idventa','v.fecha_hora','p.nombre','v.tipo_comprobante','v.serie_comprobante','v.impuesto','v.estado')
-    			->paginate(7);
+    			->get();
+
             LOG::info("---------------------------------");
             LOG::info("RESPUESTA DESDE EL METODO INDEX");
             LOG::info("---------------------------------");
+            // dd($ventas);
 
             $empresa = DB::table('config')
             ->where('estado','=','1')
@@ -56,7 +61,8 @@ class VentaController extends Controller
                 ->orderBy('idrol','desc')
                 ->get();
 
-            $request->session()->put('val1',$permiso);
+            $request->session()->put('permiso',$permiso);
+            $request->session()->put('nombre_comercial',$empresa->nombre_comercial);
 
     		return view('ventas.venta.index',["ventas"=>$ventas,"searchText"=>$query, "ruc" => $empresa->ruc]);
     	}
@@ -88,8 +94,13 @@ class VentaController extends Controller
     			$venta->num_comprobante = $request->get('num_comprobante');
     			$venta->total_venta = $request->get('total_venta');
 
-    			$mytime = Carbon::now('America/Lima');
-    			$venta->fecha_hora = $mytime->toDateTimeString();
+    			// $mytime = Carbon::now('America/Lima');
+    			// $venta->fecha_hora = $mytime->toDateTimeString();
+                
+                $time = strtotime($request->get('fecha').date("H:i:s"));
+                $fecha = date('Y-m-d H:i:s',$time);
+                
+                $venta->fecha_hora = $fecha;
     			$venta->impuesto = '18';
     			$venta->estado = 'A';
     			$venta->save();
@@ -117,13 +128,23 @@ class VentaController extends Controller
             LOG::info($e);
     	}
 
+        $empresa = DB::table('config')
+                ->where('estado','=','1')
+                ->first();
+
+        $invoice = new Core\Invoice();
+
+        $util = new Util\UtilHelper();
+
+        $total_venta = $request->get('total_venta');
+        $leyenda = $util->numtoletras($total_venta);
+
         $idcliente = $request->get('idcliente');
         $tipo_comprobante = $request->get('tipo_comprobante');
         $serie_comprobante = $request->get('serie_comprobante');
         $num_comprobante = $request->get('num_comprobante');
-        $total_venta = $request->get('total_venta');
-        $util = new Util\UtilHelper();
-        $leyenda = $util->numtoletras($total_venta);
+
+        $factura = $empresa->ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
 
         $mytime = Carbon::now('America/Lima');
         $fecha = $mytime->toDateString();
@@ -134,27 +155,25 @@ class VentaController extends Controller
         $descuento = $request->get('descuento');
         $precio_venta = $request->get('precio_venta');
 
-        $empresa = DB::table('config')
-            ->where('estado','=','1')
-            ->first();
+        if($request->get('tipo_comprobante')=='01'){
+            
+            $invoice->buildInvoiceXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta, $empresa);
+        }
 
-        $invoice = new Core\Invoice();
-        $invoice->buildInvoiceXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta, $empresa->ruc);
+        if($request->get('tipo_comprobante')=='03'){
 
-        $factura = $empresa->ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
-        $invoice->enviarFactura($factura);
-        $path = public_path('cdn/cdr\R-'.$factura.'.ZIP');
-        LOG::info($path);
-        $responseCdr = $invoice->readCdr('',$path,$tipo_comprobante);
+            $invoice->buildInvoiceXmlB($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta, $empresa);
 
-        $v = Venta::findOrFail($venta->idventa);
-        $v->response_code=$responseCdr['code'];
-        $v->descripcion_code=$responseCdr['message'];
-        $v->update();
+            $v = Venta::findOrFail($venta->idventa);
+            $v->estado = '0';
+            $v->update();
+        }
+
+        
 
         $cliente = DB::table('persona as per')
             ->join('venta as v','per.idpersona','=','v.idcliente')
-            ->select('per.nombre','per.direccion','per.num_documento','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante')
+            ->select('per.nombre','per.direccion','per.num_documento','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante','v.fecha_hora')
             ->where('v.idventa','=',$venta->idventa)
             ->first();
 
@@ -165,7 +184,44 @@ class VentaController extends Controller
             ->where('v.idventa','=',$venta->idventa)
             ->get();
         
-        $invoice->crearPDF($empresa,$cliente,$items, $leyenda);
+        $response = $invoice->readSignDocument(public_path().'\cdn\document\prueba21\\'.$factura.'.ZIP');
+
+        if($request->get('tipo_comprobante')=='01'){
+            $invoice->crearPDF($empresa,$cliente,$items, $leyenda,$response['sign']);
+        }
+        if($request->get('tipo_comprobante')=='03'){
+            $invoice->crearPDFA7($empresa,$cliente,$items, $leyenda,$response['sign']);
+        }
+
+        if($request->get('tipo_comprobante')=='01'){
+
+            $invoice->enviarFactura($factura);
+            // $respuesta = $invoice->enviarFactura($factura);
+            // // dd($respuesta);
+            if(\Session::get('fallo')){
+                \Session::put('msg','FALLO LA CONEXION CON LA SUNAT');
+                return Redirect::to('ventas/venta');
+            }
+            
+            $path = public_path('cdn/cdr\R-'.$factura.'.ZIP');
+            LOG::info($path);
+            $responseCdr = $invoice->readCdr('',$path,$tipo_comprobante);
+
+            if($responseCdr['code']=='0'){
+                $estado = '2';
+            }else{
+                $estado = '1';
+            }
+
+            $v = Venta::findOrFail($venta->idventa);
+            $v->response_code=$responseCdr['code'];
+            $v->descripcion_code=$responseCdr['message'];
+            $v->estado = $estado;
+            $v->update();
+        }
+
+        
+        
 
 
     	return Redirect::to('ventas/venta');
@@ -196,7 +252,7 @@ class VentaController extends Controller
 
     public function destroy($id){
     	$venta = Venta::findOrFail($id);
-    	$venta->Estado='C';
+    	$venta->Estado='4';
     	$venta->update();
     	return Redirect::to('ventas/venta');
     }
@@ -213,6 +269,7 @@ class VentaController extends Controller
         $ventas = DB::table('venta')
                 ->select('*')
                 ->where('serie_comprobante','LIKE','%'.$serie.'%')
+                ->where('tipo_comprobante','=',$tipo_comprobante)
                 ->orderBy('idventa','desc')
                 ->first();
         if(is_null($ventas)){
@@ -227,8 +284,118 @@ class VentaController extends Controller
         ]);
     }
 
+    //METODOS DE PRUEBA
+
     public function pdf(){
         $invoice = new Core\Invoice();
         $invoice->pdfPrueba();
+    }
+
+    public function leerFirma(){
+        $invoice = new Core\Invoice();
+        // $invoice->readSignDocument('C:\xampp1\htdocs\sisVentas\public\cdn\cdr\R-20100066603-01-F001-00000017.ZIP');
+        $response = $invoice->readSignDocument('C:\xampp1\htdocs\sisVentas\public\cdn\document\prueba21\20100066603-01-F001-00000017.ZIP');
+        LOG::info('Desde leerFirma'.$response['sign']);
+    }
+
+    public function crearPdfA7(){
+        $items = DB::table('venta as v')
+            ->join('detalle_venta as dv','dv.idventa','=','v.idventa')
+            ->join('articulo as art','art.idarticulo','=','dv.idarticulo')
+            ->select('art.codigo','art.nombre','dv.cantidad','dv.precio_venta',DB::raw('dv.cantidad * dv.precio_venta AS total'))
+            ->where('v.idventa','=',236)
+            ->get();
+        $empresa = DB::table('config')
+                ->where('estado','=','1')
+                ->first();
+        $cliente = DB::table('persona as per')
+            ->join('venta as v','per.idpersona','=','v.idcliente')
+            ->select('per.nombre','per.direccion','per.num_documento','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante','v.fecha_hora')
+            ->where('v.idventa','=',236)
+            ->first();
+        $invoice = new Core\Invoice();
+        $invoice->crearPDFA7($empresa,$cliente,$items);
+    }
+
+    public function reenviar(Request $request){
+        $idVenta = $_POST['idVenta'];
+        $serie_comprobante = $_POST['serie'];
+        $num_comprobante = $_POST['num_comprobante'];
+        $tipo_comprobante = $_POST['tipo_comprobante'];
+
+
+
+        $empresa = DB::table('config')
+                ->where('estado','=','1')
+                ->first();
+
+        $factura = $empresa->ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
+        $invoice = new Core\Invoice();
+        $invoice->enviarFactura($factura);
+        // $respuesta = $invoice->enviarFactura($factura);
+        // // dd($respuesta);
+        if(\Session::get('fallo')){
+            \Session::put('msg','FALLO LA CONEXION CON LA SUNAT');
+            // return Redirect::to('ventas/venta');
+            return response()->json([
+                'msg' => "FALLO LA CONEXION CON LA SUNAT",
+            ]);
+        }
+        
+        $path = public_path('cdn/cdr\R-'.$factura.'.ZIP');
+        LOG::info($path);
+        $responseCdr = $invoice->readCdr('',$path,$tipo_comprobante);
+
+        if($responseCdr['code']=='0'){
+            $estado = '2';
+        }else{
+            $estado = '1';
+        }
+
+        $v = Venta::findOrFail($idVenta);
+        $v->response_code=$responseCdr['code'];
+        $v->descripcion_code=$responseCdr['message'];
+        $v->estado = $estado;
+        $v->update();
+
+        // $cliente = DB::table('persona as per')
+        //     ->join('venta as v','per.idpersona','=','v.idcliente')
+        //     ->select('per.nombre','per.direccion','per.num_documento','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante','v.fecha_hora')
+        //     ->where('v.idventa','=',$idVenta)
+        //     ->first();
+
+        // $items = DB::table('venta as v')
+        //     ->join('detalle_venta as dv','dv.idventa','=','v.idventa')
+        //     ->join('articulo as art','art.idarticulo','=','dv.idarticulo')
+        //     ->select('art.codigo','art.nombre','dv.cantidad','dv.precio_venta',DB::raw('dv.cantidad * dv.precio_venta AS total'))
+        //     ->where('v.idventa','=',$idVenta)
+        //     ->get();
+        
+        // $response = $invoice->readSignDocument(public_path().'\cdn\document\prueba21\\'.$factura.'.ZIP');
+
+        // if($request->get('tipo_comprobante')=='01'){
+        //     $invoice->crearPDF($empresa,$cliente,$items, $leyenda,$response['sign']);
+        // }
+        // if($request->get('tipo_comprobante')=='03'){
+        //     $invoice->crearPDFA7($empresa,$cliente,$items, $leyenda,$response['sign']);
+        // }
+        
+        // return response()->json([
+        //     'msg' => "LA FACTURA SE ENVIO CORRECTAMENTE",
+        //     // 'correlativo' => str_pad($num_comprobante + 1,  8, "0", STR_PAD_LEFT),
+        //     // 'ventas'=>$ventas
+        // ]);   
+
+
+        \Session::put('msgB','ENVIO CORRECTO');
+        // return Redirect::to('ventas/venta');
+            return response()->json([
+            'msg' => "SE ENVIO CORRECTAMENTE LA FACTURA",
+            // 'correlativo' => str_pad($num_comprobante + 1,  8, "0", STR_PAD_LEFT),
+            // 'ventas'=>$ventas
+            ]);
+        
+
+        // return Redirect::to('ventas/venta');
     }
 }

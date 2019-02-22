@@ -1,8 +1,14 @@
 @extends ('layouts.admin')
 @section('contenido')
 <div class="row">
-	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-		<h3>Resumen Diario <a href="notas/create"><button class="btn btn-success">Nuevo</button></a> </h3>
+	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+		<h3>Resumen Diario</h3>
+		@if($errors->any())
+			<div class="alert alert-info alert-dismissible fade in">
+			  <a href="#" class="close" data-dismiss="alert" aria-label="close">X</a>
+			  <strong>{{$errors->first()}}</strong> 
+			</div>
+		@endif
 		@include('ventas.resumenboleta.search')
 	</div>
 </div>
@@ -24,18 +30,39 @@
 				<tr>
 					<td>{{$res->idresumen}}</td>
 					<td>{{$res->hash}}</td>
-					<td>{{$res->ticket}}</td>
-					<td>{{$res->estado}}</td>
+					<td>{{$res->serie}}-{{$res->numero}}</td>
+					<td>
+						@if($res->estado=='2')
+							<a class="btn btn-success btn-xs">Aceptado</a>
+						@else
+							<a class="btn btn-danger btn-xs">Rechazado</a>
+						@endif
+					</td>
 					<td>{{$res->fecha_documento}}</td>
 					<td>{{$res->fecha}}</td>
 					<td>
-						<button class="btn btn-danger" type="button"><i class="fa fa-check"></i></button>
+						<button class="btn btn-success" type="button"><i class="fa fa-check"></i></button>
 					</td>
 				</tr>
-				@include('ventas.venta.modal')
+				@include('ventas.resumenboleta.modal')
 				@endforeach
 			</table>
 		</div>
 	</div>
 </div>
+
+
+@push('scripts')
+<script>
+
+	
+
+	$(document).on("click", "#cerrar2", function(){
+        $('#error').modal('hide');
+    });
+
+
+</script>
+@endpush
+
 @endsection

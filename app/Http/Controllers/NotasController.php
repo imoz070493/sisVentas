@@ -26,6 +26,7 @@ class NotasController extends Controller
     public function __construct()
     {
     	$this->middleware('auth');
+        $this->middleware('permisoVentas');
     }
 
     public function index(Request $request)
@@ -42,11 +43,18 @@ class NotasController extends Controller
                 ->orWhere('v.tipo_comprobante','=','08')
     			->orderBy('v.idventa','desc')
     			->groupBy('v.idventa','v.fecha_hora','p.nombre','v.tipo_comprobante','v.serie_comprobante','v.impuesto','v.estado')
-    			->paginate(7);
+    			->get();
 
             $empresa = DB::table('config')
             ->where('estado','=','1')
             ->first();
+
+            $permiso = DB::table('permiso')
+                ->where('idrol','=',\Auth::user()->idrol)
+                ->orderBy('idrol','desc')
+                ->get();
+
+            $request->session()->put('permiso',$permiso);
 
     		return view('ventas.notas.index',["ventas"=>$ventas,"searchText"=>$query, "ruc" => $empresa->ruc]);
     	}
@@ -60,7 +68,6 @@ class NotasController extends Controller
                 ->join('detalle_venta as dv','v.idventa','=','dv.idventa')
                 ->select('v.idventa','v.fecha_hora','p.idpersona','p.nombre','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante','v.impuesto','v.estado','v.total_venta','v.response_code','v.moneda','v.tipo_comprobante')
                 ->where('v.tipo_comprobante','=','01')
-                ->orWhere('v.tipo_comprobante','=','03')
                 ->orderBy('v.idventa','desc')
                 ->groupBy('v.idventa','v.fecha_hora','p.nombre','v.tipo_comprobante','v.serie_comprobante','v.impuesto','v.estado')
                 ->get();
@@ -130,6 +137,21 @@ class NotasController extends Controller
         $util = new Util\UtilHelper();
         $leyenda = $util->numtoletras($total_venta);
 
+
+        $documentoReferencia = array(
+            'smodifica' => $request->get('smodifica'),
+            'nmodifica' => $request->get('nmodifica'),
+            'tipodoc' => $request->get('tipodoc'),
+            'motivo' => $request->get('motivo'),
+            'motivod' => $request->get('motivod'),
+        );
+        // $smodifica = ;
+        // $nmodifica = ;
+        // $tipodoc = $request->get('tipodoc');
+        // $motivo = $request->get('motivo');
+        // $motivod = $request->get('motivod');
+        // LOG:: info("DOCUMENTO DE REFERENCIA-".$smodifica."-".$nmodifica."-".$tipodoc);
+
         $mytime = Carbon::now('America/Lima');
         $fecha = $mytime->toDateString();
         $hora = $mytime->toTimeString();
@@ -144,7 +166,14 @@ class NotasController extends Controller
             ->first();
 
         $creditNote = new Core\CreditNote();
-        $creditNote->buildCreditNoteXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta, $empresa->ruc);
+
+        if($request->get('tipo_comprobante')=='07'){
+            $creditNote->buildCreditNoteXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta, $empresa, $documentoReferencia);
+        }
+        if($request->get('tipo_comprobante')=='08'){
+            $creditNote->buildDebitNoteXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta, $empresa, $documentoReferencia);
+        }
+        
 
         $factura = $empresa->ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
         $creditNote->enviarFactura($factura);
@@ -159,7 +188,7 @@ class NotasController extends Controller
 
         $cliente = DB::table('persona as per')
             ->join('venta as v','per.idpersona','=','v.idcliente')
-            ->select('per.nombre','per.direccion','per.num_documento','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante')
+            ->select('per.nombre','per.direccion','per.num_documento','v.tipo_comprobante','v.serie_comprobante','v.num_comprobante','v.fecha_hora', 'v.docmodifica_tipo','v.docmodifica','v.modifica_motivo','v.modifica_motivod')
             ->where('v.idventa','=',$venta->idventa)
             ->first();
 
@@ -169,8 +198,11 @@ class NotasController extends Controller
             ->select('art.codigo','art.nombre','dv.cantidad','dv.precio_venta',DB::raw('dv.cantidad * dv.precio_venta AS total'))
             ->where('v.idventa','=',$venta->idventa)
             ->get();
-        
-        $creditNote->crearPDF($empresa,$cliente,$items, $leyenda);
+
+        $invoice = new Core\Invoice();        
+        $response = $invoice->readSignDocument(public_path().'\cdn\document\prueba21\\'.$factura.'.ZIP');
+
+        $creditNote->crearPDF($empresa,$cliente,$items, $leyenda,$response['sign']);
 
 
     	return Redirect::to('ventas/notas');
@@ -196,7 +228,7 @@ class NotasController extends Controller
 			->where('d.idventa','=',$id)
 			->get();
 
-    	return view("ventas.venta.show",["venta"=>$venta,"detalles"=>$detalles]);
+    	return view("ventas.notas.show",["venta"=>$venta,"detalles"=>$detalles]);
     }
 
     public function destroy($id){
@@ -253,5 +285,4 @@ class NotasController extends Controller
     }
 
 
-    
 }

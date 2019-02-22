@@ -16,6 +16,7 @@ class UsuarioController extends Controller
 {
 	public function __construct(){
 		$this->middleware('auth');
+		$this->middleware('permisoAcceso');
 	}
 
 	public function index(Request $request){
@@ -24,7 +25,15 @@ class UsuarioController extends Controller
 			$usuarios = DB::table('users')->where('name','LIKE','%'.$query.'%')
 				->orderBy('id','desc')
 				->paginate(7);
-				return view('seguridad.usuario.index',["usuarios"=>$usuarios,'searchText'=>$query]);
+
+			$permiso = DB::table('permiso')
+                ->where('idrol','=',\Auth::user()->idrol)
+                ->orderBy('idrol','desc')
+                ->get();
+
+            $request->session()->put('permiso',$permiso);
+            
+			return view('seguridad.usuario.index',["usuarios"=>$usuarios,'searchText'=>$query]);
 		}
 	}
 

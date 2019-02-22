@@ -44,8 +44,7 @@
 			<div class="form-group">
 				<label for="proveedor">Moneda</label>
 				<select name="moneda" class="form-control">
-					<option>Seleccione</option>
-					<option value="01">Soles</option>
+					<option value="01" selected>Soles</option>
 					<option value="02">Dolares</option>
 					<option value="03">Euros</option>
 				</select>
@@ -59,7 +58,7 @@
                   <div class="input-group-addon">
                     <i class="fa fa-calendar"></i>
                   </div>
-                  <input type="text" class="form-control" id="fecha">
+                  <input type="text" class="form-control" id="fecha" name="fecha" value="<?php echo date("Y/m/d");?>">
                 </div>
 			</div>
 		</div>
@@ -206,7 +205,8 @@
 		tc = $("#tipo_comprobante").val();
 		// alert(tc)
 		$.ajax({
-            url: "/venta/peticion",
+            // url: "/venta/peticion",
+            url: "{{ asset('venta/peticion') }}",
             type: "post",
             headers: {'X-CSRF-TOKEN': token},
             // dataType: 'json',
@@ -236,8 +236,10 @@
 		precio_venta = $("#pprecio_venta").val();
 		stock = $('#pstock').val();
 
+		console.log("STOCK: "+stock)
+
 		if(idarticulo != "" && cantidad!="" && cantidad > 0 && descuento != "" && precio_venta != "") {
-			if(stock >= cantidad){
+			if(parseInt(stock) >= parseInt(cantidad)){
 				subtotal[cont] = (cantidad*precio_venta - descuento);
 				total = total + subtotal[cont];
 				var fila = '<tr class="selected" id="fila'+cont+'"><td><button type="button" class="btn btn-warning" onclick="eliminar('+cont+');">X</button></td><td><input type="hidden" name="idarticulo[]" value="'+idarticulo+'">'+articulo+'</td><td><input type="number" name="cantidad[]" value="'+cantidad+'"></td><td><input type="number" name="precio_venta[]" value="'+precio_venta+'"></td><td><input type="number" name="descuento[]" value="'+descuento+'"></td><td>'+subtotal[cont]+'</td></tr>';

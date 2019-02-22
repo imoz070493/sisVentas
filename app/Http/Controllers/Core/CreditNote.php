@@ -45,7 +45,7 @@ class CreditNote
         //dd($name,$nameExplode);
 
         try {
-            $sunatRequest = $this->newSunatRequest('beta');
+            $sunatRequest = $this->newSunatRequest(env('SUNAT_SERVER'));
             if (!$sunatRequest['status']) {
                 throw new Exception($sunatRequest['message']);
             }
@@ -224,7 +224,7 @@ class CreditNote
     }
 
 
-    public static function buildCreditNoteXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta,$ruc){
+    public static function buildCreditNoteXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta,$empresa,$documentoReferencia){
         $dom = new DOMDocument('1.0', 'UTF-8');
         #$dom->preserveWhiteSpace = false;
         // $dom->xmlStandalone = false;
@@ -266,23 +266,27 @@ class CreditNote
         $customizationID->nodeValue = '2.0';
         $creditNote->appendChild($customizationID);
 
+        #VARIABLE
         $cbcID = $dom->createElement('cbc:ID');
         $cbcID->nodeValue = $serie_comprobante.'-'.$num_comprobante;
         $creditNote->appendChild($cbcID);
 
+        #VARIABLE
         $issueDate = $dom->createElement('cbc:IssueDate');
         $issueDate->nodeValue = $fecha;
         $creditNote->appendChild($issueDate);
 
+        #VARIABLE
         $issueTime = $dom->createElement('cbc:IssueTime');
         $issueTime->nodeValue=$hora;
         $creditNote->appendChild($issueTime);
 
+        #VARIABLE
         // $note = $dom->createElement('cbc:Note');
         // $nNote = $dom->createAttribute('languageLocaleID');
-        // $nNote->value = '3000';
+        // $nNote->value = '1000';
         // $note->appendChild($nNote);
-        // $note->nodeValue = '0501002017062500125';
+        // $note->nodeValue = $leyenda;
         // $creditNote->appendChild($note);
 
         $documentCurrencyCode = $dom->createElement('cbc:DocumentCurrencyCode');
@@ -292,16 +296,20 @@ class CreditNote
         $discrepancyResponse = $dom->createElement('cac:DiscrepancyResponse');
         $creditNote->appendChild($discrepancyResponse);
 
+        #VARIABLE
         $referenceID = $dom->createElement('cbc:ReferenceID');
-        $referenceID->nodeValue='FC01-4355';
+        $referenceID->nodeValue= $documentoReferencia['smodifica'].'-'.$documentoReferencia['nmodifica'];
         $discrepancyResponse->appendChild($referenceID);
 
+        #VARIABLE
         $responseCode = $dom->createElement('cbc:ResponseCode');
-        $responseCode->nodeValue='07';
+        $responseCode->nodeValue=$documentoReferencia['motivo'];
         $discrepancyResponse->appendChild($responseCode);
 
+        #VARIABLE
         $description = $dom->createElement('cbc:Description');
-        $description->nodeValue = 'Unidades defectuosas, no leen CD que contengan archivos MP3';
+        $adescripcion = $dom->createCDATASection($documentoReferencia['motivod']);
+        $description->appendChild($adescripcion);
         $discrepancyResponse->appendChild($description);
 
         $billingReference = $dom->createElement('cac:BillingReference');
@@ -310,19 +318,22 @@ class CreditNote
         $invoiceDocumentReference = $dom->createElement('cac:InvoiceDocumentReference');
         $billingReference->appendChild($invoiceDocumentReference);
 
+        #VARIABLE
         $cbcID =$dom->createElement('cbc:ID');
-        $cbcID->nodeValue='FC01-4355';
+        $cbcID->nodeValue = $documentoReferencia['smodifica'].'-'.$documentoReferencia['nmodifica'];
         $invoiceDocumentReference->appendChild($cbcID);
 
+        #VARIABLE
         $documentTypeCode = $dom->createElement('cbc:DocumentTypeCode');
-        $documentTypeCode->nodeValue='01';
+        $documentTypeCode->nodeValue = $documentoReferencia['tipodoc'];
         $invoiceDocumentReference->appendChild($documentTypeCode);
 
         $signature = $dom->createElement('cac:Signature');
         $creditNote->appendChild($signature);
 
+        #VARIABLE
         $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = 'LlamaSign';
+        $cbcID->nodeValue = $serie_comprobante.'-'.$num_comprobante;
         $signature->appendChild($cbcID);
 
         $signatoryParty = $dom->createElement('cac:SignatoryParty');
@@ -331,15 +342,18 @@ class CreditNote
         $partyIdentification = $dom->createElement('cac:PartyIdentification');
         $signatoryParty->appendChild($partyIdentification);
 
+        #VARIABLE
         $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = '20600695771';
+        $cbcID->nodeValue = $empresa->ruc;
         $partyIdentification->appendChild($cbcID);
 
         $partyName = $dom->createElement('cac:PartyName');
         $signatoryParty->appendChild($partyName);
 
+        #VARIABLE
         $cbcName = $dom->createElement('cbc:Name');
-        $cbcName->nodeValue='LLAMA.PE SA';
+        $acbcName = $dom->createCDATASection($empresa->razon_social);
+        $cbcName->appendChild($acbcName);
         $partyName->appendChild($cbcName);
 
         $digitalSignatoreAttachment = $dom->createElement('cac:DigitalSignatureAttachment');
@@ -348,8 +362,9 @@ class CreditNote
         $externalReference = $dom->createElement('cac:ExternalReference');
         $digitalSignatoreAttachment->appendChild($externalReference);
 
+        #VARIABLE
         $cbcURI = $dom->createElement('cbc:URI');
-        $cbcURI->nodeValue = '#LlamaSign';
+        $cbcURI->nodeValue = '#'.$serie_comprobante.'-'.$num_comprobante;
         $externalReference->appendChild($cbcURI);
 
         $accountSupplierParty = $dom->createElement('cac:AccountingSupplierParty');
@@ -361,6 +376,7 @@ class CreditNote
         $partyIdentification = $dom->createElement('cac:PartyIdentification');
         $party->appendChild($partyIdentification);
 
+        #VARIABLE
         $cbcID = $dom->createElement('cbc:ID');
         $schemeID = $dom->createAttribute('schemeID');
         $schemeID->value='6';
@@ -368,32 +384,37 @@ class CreditNote
         $schemeName->value='SUNAT:Identificador de Documento de Identidad';
         $schemAgencyName = $dom->createAttribute('schemeAgencyName');
         $schemAgencyName->value='PE:SUNAT';
-        $schemeURI = $dom->createElement('schemeURI');
+        $schemeURI = $dom->createAttribute('schemeURI');
         $schemeURI->value='urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06';
         $cbcID->appendChild($schemeID);
         $cbcID->appendChild($schemeName);
         $cbcID->appendChild($schemAgencyName);
         $cbcID->appendChild($schemeURI);
-        $cbcID->nodeValue=$ruc;
+        $cbcID->nodeValue=$empresa->ruc;
         $partyIdentification->appendChild($cbcID);
 
         $partyName = $dom->createElement('cac:PartyName');
         $party->appendChild($partyName);
 
+        #VARIABLE
         $cbcName = $dom->createElement('cbc:Name');
-        $cbcName->nodeValue = 'LLAMA.PE SA';
+        $acbcName = $dom->createCDATASection($empresa->nombre_comercial);
+        $cbcName->appendChild($acbcName);
         $partyName->appendChild($cbcName);
 
         $partyLegalEntity = $dom->createElement('cac:PartyLegalEntity');
         $party->appendChild($partyLegalEntity);
 
+        #VARIABLE
         $registrationName = $dom->createElement('cbc:RegistrationName');
-        $registrationName->nodeValue='LLAMA.PE SA';
+        $aregistrationName = $dom->createCDATASection($empresa->razon_social);
+        $registrationName->appendChild($aregistrationName);
         $partyLegalEntity->appendChild($registrationName);
 
         $registrationAdress = $dom->createElement('cac:RegistrationAddress');
         $partyLegalEntity->appendChild($registrationAdress);
 
+        #VARIABLE
         $addressTypeCode = $dom->createElement('cbc:AddressTypeCode');
         $addressTypeCode->nodeValue='0001';
         $registrationAdress->appendChild($addressTypeCode);
@@ -412,6 +433,7 @@ class CreditNote
         $partyIdentification = $dom->createElement('cac:PartyIdentification');
         $party->appendChild($partyIdentification);
 
+        #VARIABLE
         $cbcID = $dom->createElement('cbc:ID');
         $schemeID = $dom->createAttribute('schemeID');
         $schemeID->value='6';
@@ -419,7 +441,7 @@ class CreditNote
         $schemeName->value='SUNAT:Identificador de Documento de Identidad';
         $schemAgencyName = $dom->createAttribute('schemeAgencyName');
         $schemAgencyName->value='PE:SUNAT';
-        $schemeURI = $dom->createElement('schemeURI');
+        $schemeURI = $dom->createAttribute('schemeURI');
         $schemeURI->value='urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06';
         $cbcID->appendChild($schemeID);
         $cbcID->appendChild($schemeName);
@@ -431,35 +453,43 @@ class CreditNote
         $partyLegalEntity = $dom->createElement('cac:PartyLegalEntity');
         $party->appendChild($partyLegalEntity);
 
+        #VARIABLE
         $registrationName = $dom->createElement('cbc:RegistrationName');
-        $registrationName->nodeValue = $query->nombre;
+        $aregistrationName =$dom->createCDATASection($query->nombre);
+        $registrationName->appendChild($aregistrationName);
         $partyLegalEntity->appendChild($registrationName);
+
+        $neto = round(($total_venta/1.18),2);
+        $igv = $total_venta-$neto;
 
         $taxTotal = $dom->createElement('cac:TaxTotal');
         $creditNote->appendChild($taxTotal);
 
+        #VARIABLE
         $taxAmount = $dom->createElement('cbc:TaxAmount');
         $aTaxAmount = $dom->createAttribute('currencyID');
         $aTaxAmount->value = 'PEN';
         $taxAmount->appendChild($aTaxAmount);
-        $taxAmount->nodeValue = '1494.92';
+        $taxAmount->nodeValue = $igv;
         $taxTotal->appendChild($taxAmount);
 
         $taxSubTotal = $dom->createElement('cac:TaxSubtotal');
         $taxTotal->appendChild($taxSubTotal);
 
+        #VARIABLE
         $taxableAmount = $dom->createElement('cbc:TaxableAmount');
         $aTaxableAmount = $dom->createAttribute('currencyID');
         $aTaxableAmount->value = 'PEN';
         $taxableAmount->appendChild($aTaxableAmount);
-        $taxableAmount->nodeValue = '8305.08';
+        $taxableAmount->nodeValue = $neto;
         $taxSubTotal->appendChild($taxableAmount);
 
+        #VARIABLE
         $taxAmount = $dom->createElement('cbc:TaxAmount');
         $aTaxAmount = $dom->createAttribute('currencyID');
         $aTaxAmount->value = 'PEN';
         $taxAmount->appendChild($aTaxAmount);
-        $taxAmount->nodeValue = '1494.92';
+        $taxAmount->nodeValue = $igv;
         $taxSubTotal->appendChild($taxAmount);
 
         $taxCategory = $dom->createElement('cac:TaxCategory');
@@ -468,6 +498,7 @@ class CreditNote
         $taxScheme = $dom->createElement('cac:TaxScheme');
         $taxCategory->appendChild($taxScheme);
 
+        #VARIABLE
         $cbcID = $dom->createElement('cbc:ID');
         $acbcID = $dom->createAttribute('schemeID');
         $acbcID->value='UN/ECE 5153';
@@ -489,152 +520,178 @@ class CreditNote
         $legalMonetaryTotal = $dom->createElement('cac:LegalMonetaryTotal');
         $creditNote->appendChild($legalMonetaryTotal);
 
+        #VARIABLE
         $payableAmount = $dom->createElement('cbc:PayableAmount');
         $aPayableAmount = $dom->createAttribute('currencyID');
         $aPayableAmount->value = 'PEN';
         $payableAmount->appendChild($aPayableAmount);
-        $payableAmount->nodeValue = '8379.00';
+        $payableAmount->nodeValue = number_format(round($total_venta,2),2,'.','');
         $legalMonetaryTotal->appendChild($payableAmount);
 
         //CREDITNOTELINE 1
 
-        $creditNoteLine = $dom->createElement('cac:CreditNoteLine');
-        $creditNote->appendChild($creditNoteLine);
+        $cont = 1;
+        while($cont <= count($idarticulo)){
 
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = '1';
-        $creditNoteLine->appendChild($cbcID);
+            $total_item = $precio_venta[$cont-1]*$cantidad[$cont-1];
 
-        $creditedQuantity = $dom->createElement('cbc:CreditedQuantity');
-        $aCreditedQuantity = $dom->createAttribute('unitCode');
-        $aCreditedQuantity->value = 'NIU';
-        $creditedQuantity->appendChild($aCreditedQuantity);
-        $creditedQuantity->nodeValue = '100';
-        $creditNoteLine->appendChild($creditedQuantity);
+            $neto_item = $total_item/1.18;
+            $impuesto = $total_item-$neto_item;
 
-        $lineExtensionAmount = $dom->createElement('cbc:LineExtensionAmount');
-        $aLineExtensionAmount = $dom->createAttribute('currencyID');
-        $aLineExtensionAmount->value = 'PEN';
-        $lineExtensionAmount->appendChild($aLineExtensionAmount);
-        $lineExtensionAmount->nodeValue = '8305.08';
-        $creditNoteLine->appendChild($lineExtensionAmount);
+            $creditNoteLine = $dom->createElement('cac:CreditNoteLine');
+            $creditNote->appendChild($creditNoteLine);
 
-        $pricingReference = $dom->createElement('cac:PricingReference');
-        $creditNoteLine->appendChild($pricingReference);
+            $cbcID = $dom->createElement('cbc:ID');
+            $cbcID->nodeValue = $cont;
+            $creditNoteLine->appendChild($cbcID);
 
-        $alternativeConditionPrice = $dom->createElement('cac:AlternativeConditionPrice');
-        $pricingReference->appendChild($alternativeConditionPrice);
+            #VARIABLE
+            $creditedQuantity = $dom->createElement('cbc:CreditedQuantity');
+            $aCreditedQuantity = $dom->createAttribute('unitCode');
+            $aCreditedQuantity->value = 'NIU';
+            $creditedQuantity->appendChild($aCreditedQuantity);
+            $creditedQuantity->nodeValue = $cantidad[$cont-1];
+            $creditNoteLine->appendChild($creditedQuantity);
 
-        $priceAmount = $dom->createElement('cbc:PriceAmount');
-        $aPriceAmount = $dom->createAttribute('currencyID');
-        $aPriceAmount->value = 'PEN';
-        $priceAmount->appendChild($aPriceAmount);
-        $priceAmount->nodeValue = '98.00';
-        $alternativeConditionPrice->appendChild($priceAmount);
+            #VARIABLE
+            $lineExtensionAmount = $dom->createElement('cbc:LineExtensionAmount');
+            $aLineExtensionAmount = $dom->createAttribute('currencyID');
+            $aLineExtensionAmount->value = 'PEN';
+            $lineExtensionAmount->appendChild($aLineExtensionAmount);
+            $lineExtensionAmount->nodeValue = number_format(round($neto_item,2),2,'.','');
+            $creditNoteLine->appendChild($lineExtensionAmount);
 
-        $priceTypeCode = $dom->createElement('cbc:PriceTypeCode');
-        $priceTypeCode->nodeValue = '01';
-        $alternativeConditionPrice->appendChild($priceTypeCode);
+            $pricingReference = $dom->createElement('cac:PricingReference');
+            $creditNoteLine->appendChild($pricingReference);
 
-        $taxTotal = $dom->createElement('cac:TaxTotal');
-        $creditNoteLine->appendChild($taxTotal);
+            $alternativeConditionPrice = $dom->createElement('cac:AlternativeConditionPrice');
+            $pricingReference->appendChild($alternativeConditionPrice);
 
-        $taxAmount = $dom->createElement('cbc:TaxAmount');
-        $aTaxAmount = $dom->createAttribute('currencyID');
-        $aTaxAmount->value='PEN';
-        $taxAmount->appendChild($aTaxAmount);
-        $taxAmount->nodeValue = '1494.92';
-        $taxTotal->appendChild($taxAmount);
+            #VARIABLE
+            $priceAmount = $dom->createElement('cbc:PriceAmount');
+            $aPriceAmount = $dom->createAttribute('currencyID');
+            $aPriceAmount->value = 'PEN';
+            $priceAmount->appendChild($aPriceAmount);
+            $priceAmount->nodeValue = number_format(round($precio_venta[$cont-1],2),2,'.','');
+            $alternativeConditionPrice->appendChild($priceAmount);
 
-        $taxSubTotal = $dom->createElement('cac:TaxSubtotal');
-        $taxTotal->appendChild($taxSubTotal);
+            #VARIABLE
+            $priceTypeCode = $dom->createElement('cbc:PriceTypeCode');
+            $priceTypeCode->nodeValue = '01';
+            $alternativeConditionPrice->appendChild($priceTypeCode);
 
-        $taxableAmount = $dom->createElement('cbc:TaxableAmount');
-        $aTaxableAmount = $dom->createAttribute('currencyID');
-        $aTaxableAmount->value='PEN';
-        $taxableAmount->appendChild($aTaxableAmount);
-        $taxableAmount->nodeValue = '8305.08';
-        $taxSubTotal->appendChild($taxableAmount);
+            $taxTotal = $dom->createElement('cac:TaxTotal');
+            $creditNoteLine->appendChild($taxTotal);
 
-        $taxAmount = $dom->createElement('cbc:TaxAmount');
-        $aTaxAmount = $dom->createAttribute('currencyID');
-        $aTaxAmount->value='PEN';
-        $taxAmount->appendChild($aTaxAmount);
-        $taxAmount->nodeValue = '1494.92';
-        $taxSubTotal->appendChild($taxAmount);
+            #VARIABLE
+            $taxAmount = $dom->createElement('cbc:TaxAmount');
+            $aTaxAmount = $dom->createAttribute('currencyID');
+            $aTaxAmount->value='PEN';
+            $taxAmount->appendChild($aTaxAmount);
+            $taxAmount->nodeValue = number_format(round($impuesto,2),2,'.','');
+            $taxTotal->appendChild($taxAmount);
 
-        $taxCategory = $dom->createElement('cac:TaxCategory');
-        $taxSubTotal->appendChild($taxCategory);
+            $taxSubTotal = $dom->createElement('cac:TaxSubtotal');
+            $taxTotal->appendChild($taxSubTotal);
 
-        $percent = $dom->createElement('cbc:Percent');
-        $percent->nodeValue = '18.00';
-        $taxCategory->appendChild($percent);
+            #VARIABLE
+            $taxableAmount = $dom->createElement('cbc:TaxableAmount');
+            $aTaxableAmount = $dom->createAttribute('currencyID');
+            $aTaxableAmount->value='PEN';
+            $taxableAmount->appendChild($aTaxableAmount);
+            $taxableAmount->nodeValue = number_format(round($neto_item,2),2,'.','');
+            $taxSubTotal->appendChild($taxableAmount);
 
-        $taxExemptionReasonCode = $dom->createElement('cbc:TaxExemptionReasonCode');
-        $taxExemptionReasonCode->nodeValue = '10';
-        $taxCategory->appendChild($taxExemptionReasonCode);
+            #VARIABLE
+            $taxAmount = $dom->createElement('cbc:TaxAmount');
+            $aTaxAmount = $dom->createAttribute('currencyID');
+            $aTaxAmount->value='PEN';
+            $taxAmount->appendChild($aTaxAmount);
+            $taxAmount->nodeValue = number_format(round($impuesto,2),2,'.','');
+            $taxSubTotal->appendChild($taxAmount);
 
-        $taxScheme = $dom->createElement('cac:TaxScheme');
-        $taxCategory->appendChild($taxScheme);
+            $taxCategory = $dom->createElement('cac:TaxCategory');
+            $taxSubTotal->appendChild($taxCategory);
 
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = '1000';
-        $taxScheme->appendChild($cbcID);
+            #VARIABLE
+            $percent = $dom->createElement('cbc:Percent');
+            $percent->nodeValue = '18.00';
+            $taxCategory->appendChild($percent);
 
-        $cbcName = $dom->createElement('cbc:Name');
-        $cbcName->nodeValue = 'IGV';
-        $taxScheme->appendChild($cbcName);
+            #VARIABLE
+            $taxExemptionReasonCode = $dom->createElement('cbc:TaxExemptionReasonCode');
+            $taxExemptionReasonCode->nodeValue = '10';
+            $taxCategory->appendChild($taxExemptionReasonCode);
 
-        $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
-        $taxTypeCode->nodeValue = 'VAT';
-        $taxScheme->appendChild($taxTypeCode);
+            $taxScheme = $dom->createElement('cac:TaxScheme');
+            $taxCategory->appendChild($taxScheme);
 
-        $item = $dom->createElement('cac:Item');
-        $creditNoteLine->appendChild($item);
+            $cbcID = $dom->createElement('cbc:ID');
+            $cbcID->nodeValue = '1000';
+            $taxScheme->appendChild($cbcID);
 
-        $description = $dom->createElement('cbc:Description');
-        $description->nodeValue='Grabadora LG Externo Modelo: GE20LU10';
-        $item->appendChild($description);
+            $cbcName = $dom->createElement('cbc:Name');
+            $cbcName->nodeValue = 'IGV';
+            $taxScheme->appendChild($cbcName);
 
-        $sellersItemIdentification = $dom->createElement('cac:SellersItemIdentification');
-        $item->appendChild($sellersItemIdentification);
+            $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
+            $taxTypeCode->nodeValue = 'VAT';
+            $taxScheme->appendChild($taxTypeCode);
 
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue='GLG199';
-        $sellersItemIdentification->appendChild($cbcID);
+            $item = $dom->createElement('cac:Item');
+            $creditNoteLine->appendChild($item);
 
-        $comodityClassification = $dom->createElement('cac:CommodityClassification');
-        $item->appendChild($comodityClassification);
+            $articulo = Articulo::findOrFail($idarticulo[$cont-1]);
 
-        $itemClassficationCode = $dom->createElement('cbc:ItemClassificationCode');
-        $listID = $dom->createAttribute('listID');
-        $listID->value='UNSPSC';
-        $listAgencyName = $dom->createAttribute('listAgencyName');
-        $listAgencyName->value='GS1 US';
-        $listName = $dom->createAttribute('listName');
-        $listName->value='Item Classification';
-        $itemClassficationCode->appendChild($listID);
-        $itemClassficationCode->appendChild($listAgencyName);
-        $itemClassficationCode->appendChild($listName);
-        $itemClassficationCode->nodeValue='45111723';
-        $comodityClassification->appendChild($itemClassficationCode);
+            #VARIABLE
+            $description = $dom->createElement('cbc:Description');
+            $adescripcion = $dom->createCDATASection($articulo->nombre);
+            $description->appendChild($adescripcion);
+            $item->appendChild($description);
 
-        $price = $dom->createElement('cac:Price');
-        $creditNoteLine->appendChild($price);
+            // $sellersItemIdentification = $dom->createElement('cac:SellersItemIdentification');
+            // $item->appendChild($sellersItemIdentification);
 
-        $priceAmount = $dom->createElement('cbc:PriceAmount');
-        $aPriceAmount = $dom->createAttribute('currencyID');
-        $aPriceAmount->value = 'PEN';
-        $priceAmount->appendChild($aPriceAmount);
-        $priceAmount->nodeValue='83.05';
-        $price->appendChild($priceAmount);
+            #VARIABLE
+            // $cbcID = $dom->createElement('cbc:ID');
+            // $cbcID->nodeValue='GLG199';
+            // $sellersItemIdentification->appendChild($cbcID);
+
+            // $comodityClassification = $dom->createElement('cac:CommodityClassification');
+            // $item->appendChild($comodityClassification);
+
+            // $itemClassficationCode = $dom->createElement('cbc:ItemClassificationCode');
+            // $listID = $dom->createAttribute('listID');
+            // $listID->value='UNSPSC';
+            // $listAgencyName = $dom->createAttribute('listAgencyName');
+            // $listAgencyName->value='GS1 US';
+            // $listName = $dom->createAttribute('listName');
+            // $listName->value='Item Classification';
+            // $itemClassficationCode->appendChild($listID);
+            // $itemClassficationCode->appendChild($listAgencyName);
+            // $itemClassficationCode->appendChild($listName);
+            // $itemClassficationCode->nodeValue='45111723';
+            // $comodityClassification->appendChild($itemClassficationCode);
+
+            $price = $dom->createElement('cac:Price');
+            $creditNoteLine->appendChild($price);
+
+            #VARIABLE
+            $priceAmount = $dom->createElement('cbc:PriceAmount');
+            $aPriceAmount = $dom->createAttribute('currencyID');
+            $aPriceAmount->value = 'PEN';
+            $priceAmount->appendChild($aPriceAmount);
+            $priceAmount->nodeValue = number_format(round($precio_venta[$cont-1],2),2,'.','');
+            $price->appendChild($priceAmount);
+            $cont++;
+        }
 
         
 
 
 
         // $xmlName = sprintf('%s-%s-%s', "Prueba", '01',1);
-        $xmlName = $ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
+        $xmlName = $empresa->ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
         $xmlPath = public_path().'\cdn/xml/'. $xmlName . '.XML';
         $xmlFullPath = $xmlPath;
         file_exists($xmlFullPath) ? unlink($xmlFullPath) : '';
@@ -775,7 +832,614 @@ class CreditNote
             unlink($xmlFullPath);
     }
 
-    public function crearPDF($empresa,$cliente,$items, $leyenda){
+    public static function buildDebitNoteXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta,$empresa,$documentoReferencia){
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        #$dom->preserveWhiteSpace = false;
+        // $dom->xmlStandalone = false;
+        $dom->formatOutput = true;
+
+        $debitNote = $dom->createElement('DebitNote');
+        $newNode = $dom->appendChild($debitNote);
+        $newNode->setAttribute('xmlns', 'urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2');
+        $newNode->setAttribute('xmlns:cac',
+            'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+        $newNode->setAttribute('xmlns:cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+        $newNode->setAttribute('xmlns:ccts', 'urn:un:unece:uncefact:documentation:2');
+        $newNode->setAttribute('xmlns:ds', 'http://www.w3.org/2000/09/xmldsig#');
+        $newNode->setAttribute('xmlns:ext',
+            'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2');
+        $newNode->setAttribute('xmlns:qdt', 'urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2');
+        $newNode->setAttribute('xmlns:sac',
+            'urn:sunat:names:specification:ubl:peru:schema:xsd:SunatAggregateComponents-1');
+        $newNode->setAttribute('xmlns:udt',
+            'urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2');
+        $newNode->setAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
+
+        $ublExtensions = $dom->createElement('ext:UBLExtensions');
+        $debitNote->appendChild($ublExtensions);
+
+        $ublExtension = $dom->createElement('ext:UBLExtension');
+        $ublExtensions->appendChild($ublExtension);
+
+        $extensionContent = $dom->createElement('ext:ExtensionContent');
+        $ublExtension->appendChild($extensionContent);
+
+
+
+        $ublVersionID = $dom->createElement('cbc:UBLVersionID');
+        $ublVersionID->nodeValue = '2.1';
+        $debitNote->appendChild($ublVersionID);
+
+        $customizationID = $dom->createElement('cbc:CustomizationID');
+        $customizationID->nodeValue = '2.0';
+        $debitNote->appendChild($customizationID);
+
+        #VARIABLE
+        $cbcID = $dom->createElement('cbc:ID');
+        $cbcID->nodeValue = $serie_comprobante.'-'.$num_comprobante;
+        $debitNote->appendChild($cbcID);
+
+        #VARIABLE
+        $issueDate = $dom->createElement('cbc:IssueDate');
+        $issueDate->nodeValue = $fecha;
+        $debitNote->appendChild($issueDate);
+
+        #VARIABLE
+        $issueTime = $dom->createElement('cbc:IssueTime');
+        $issueTime->nodeValue=$hora;
+        $debitNote->appendChild($issueTime);
+
+        #VARIABLE
+        // $note = $dom->createElement('cbc:Note');
+        // $nNote = $dom->createAttribute('languageLocaleID');
+        // $nNote->value = '1000';
+        // $note->appendChild($nNote);
+        // $note->nodeValue = $leyenda;
+        // $debitNote->appendChild($note);
+
+        $documentCurrencyCode = $dom->createElement('cbc:DocumentCurrencyCode');
+        $documentCurrencyCode->nodeValue='PEN';
+        $debitNote->appendChild($documentCurrencyCode);
+
+        $discrepancyResponse = $dom->createElement('cac:DiscrepancyResponse');
+        $debitNote->appendChild($discrepancyResponse);
+
+        #VARIABLE
+        $referenceID = $dom->createElement('cbc:ReferenceID');
+        $referenceID->nodeValue=$documentoReferencia['smodifica'].'-'.$documentoReferencia['nmodifica'];
+        $discrepancyResponse->appendChild($referenceID);
+
+        #VARIABLE
+        $responseCode = $dom->createElement('cbc:ResponseCode');
+        $responseCode->nodeValue=$documentoReferencia['motivo'];
+        $discrepancyResponse->appendChild($responseCode);
+
+        #VARIABLE
+        $description = $dom->createElement('cbc:Description');
+        $adescripcion = $dom->createCDATASection($documentoReferencia['motivod']);
+        $description->appendChild($adescripcion);
+        $discrepancyResponse->appendChild($description);
+
+        $billingReference = $dom->createElement('cac:BillingReference');
+        $debitNote->appendChild($billingReference);
+
+        $invoiceDocumentReference = $dom->createElement('cac:InvoiceDocumentReference');
+        $billingReference->appendChild($invoiceDocumentReference);
+
+        #VARIABLE
+        $cbcID =$dom->createElement('cbc:ID');
+        $cbcID->nodeValue = $documentoReferencia['smodifica'].'-'.$documentoReferencia['nmodifica'];
+        $invoiceDocumentReference->appendChild($cbcID);
+
+        #VARIABLE
+        $documentTypeCode = $dom->createElement('cbc:DocumentTypeCode');
+        $documentTypeCode->nodeValue = $documentoReferencia['tipodoc'];
+        $invoiceDocumentReference->appendChild($documentTypeCode);
+
+        $signature = $dom->createElement('cac:Signature');
+        $debitNote->appendChild($signature);
+
+        #VARIABLE
+        $cbcID = $dom->createElement('cbc:ID');
+        $cbcID->nodeValue = $serie_comprobante.'-'.$num_comprobante;
+        $signature->appendChild($cbcID);
+
+        $signatoryParty = $dom->createElement('cac:SignatoryParty');
+        $signature->appendChild($signatoryParty);
+
+        $partyIdentification = $dom->createElement('cac:PartyIdentification');
+        $signatoryParty->appendChild($partyIdentification);
+
+        #VARIABLE
+        $cbcID = $dom->createElement('cbc:ID');
+        $cbcID->nodeValue = $empresa->ruc;
+        $partyIdentification->appendChild($cbcID);
+
+        $partyName = $dom->createElement('cac:PartyName');
+        $signatoryParty->appendChild($partyName);
+
+        #VARIABLE
+        $cbcName = $dom->createElement('cbc:Name');
+        $acbcName = $dom->createCDATASection($empresa->razon_social);
+        $cbcName->appendChild($acbcName);
+        $partyName->appendChild($cbcName);
+
+        $digitalSignatoreAttachment = $dom->createElement('cac:DigitalSignatureAttachment');
+        $signature->appendChild($digitalSignatoreAttachment);
+
+        $externalReference = $dom->createElement('cac:ExternalReference');
+        $digitalSignatoreAttachment->appendChild($externalReference);
+
+        #VARIABLE
+        $cbcURI = $dom->createElement('cbc:URI');
+        $cbcURI->nodeValue = '#'.$serie_comprobante.'-'.$num_comprobante;
+        $externalReference->appendChild($cbcURI);
+
+        $accountSupplierParty = $dom->createElement('cac:AccountingSupplierParty');
+        $debitNote->appendChild($accountSupplierParty);
+
+        $party = $dom->createElement('cac:Party');
+        $accountSupplierParty->appendChild($party);
+
+        $partyIdentification = $dom->createElement('cac:PartyIdentification');
+        $party->appendChild($partyIdentification);
+
+        #VARIABLE
+        $cbcID = $dom->createElement('cbc:ID');
+        $schemeID = $dom->createAttribute('schemeID');
+        $schemeID->value='6';
+        $schemeName = $dom->createAttribute('schemeName');
+        $schemeName->value='SUNAT:Identificador de Documento de Identidad';
+        $schemAgencyName = $dom->createAttribute('schemeAgencyName');
+        $schemAgencyName->value='PE:SUNAT';
+        $schemeURI = $dom->createAttribute('schemeURI');
+        $schemeURI->value='urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06';
+        $cbcID->appendChild($schemeID);
+        $cbcID->appendChild($schemeName);
+        $cbcID->appendChild($schemAgencyName);
+        $cbcID->appendChild($schemeURI);
+        $cbcID->nodeValue=$empresa->ruc;
+        $partyIdentification->appendChild($cbcID);
+
+        $partyName = $dom->createElement('cac:PartyName');
+        $party->appendChild($partyName);
+
+        #VARIABLE
+        $cbcName = $dom->createElement('cbc:Name');
+        $acbcName = $dom->createCDATASection($empresa->nombre_comercial);
+        $cbcName->appendChild($acbcName);
+        $partyName->appendChild($cbcName);
+
+        $partyLegalEntity = $dom->createElement('cac:PartyLegalEntity');
+        $party->appendChild($partyLegalEntity);
+
+        #VARIABLE
+        $registrationName = $dom->createElement('cbc:RegistrationName');
+        $aregistrationName = $dom->createCDATASection($empresa->razon_social);
+        $registrationName->appendChild($aregistrationName);
+        $partyLegalEntity->appendChild($registrationName);
+
+        $registrationAdress = $dom->createElement('cac:RegistrationAddress');
+        $partyLegalEntity->appendChild($registrationAdress);
+
+        #VARIABLE
+        $addressTypeCode = $dom->createElement('cbc:AddressTypeCode');
+        $addressTypeCode->nodeValue='0001';
+        $registrationAdress->appendChild($addressTypeCode);
+
+        
+        ////////////////////////////////////////////////////////////////////////////////////////
+
+        $query = Persona::findOrFail($idcliente);
+
+        $accountCustomerParty = $dom->createElement('cac:AccountingCustomerParty');
+        $debitNote->appendChild($accountCustomerParty);
+
+        $party = $dom->createElement('cac:Party');
+        $accountCustomerParty->appendChild($party);
+
+        $partyIdentification = $dom->createElement('cac:PartyIdentification');
+        $party->appendChild($partyIdentification);
+
+        #VARIABLE
+        $cbcID = $dom->createElement('cbc:ID');
+        $schemeID = $dom->createAttribute('schemeID');
+        $schemeID->value='6';
+        $schemeName = $dom->createAttribute('schemeName');
+        $schemeName->value='SUNAT:Identificador de Documento de Identidad';
+        $schemAgencyName = $dom->createAttribute('schemeAgencyName');
+        $schemAgencyName->value='PE:SUNAT';
+        $schemeURI = $dom->createAttribute('schemeURI');
+        $schemeURI->value='urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06';
+        $cbcID->appendChild($schemeID);
+        $cbcID->appendChild($schemeName);
+        $cbcID->appendChild($schemAgencyName);
+        $cbcID->appendChild($schemeURI);
+        $cbcID->nodeValue=$query->num_documento;
+        $partyIdentification->appendChild($cbcID);
+
+        $partyLegalEntity = $dom->createElement('cac:PartyLegalEntity');
+        $party->appendChild($partyLegalEntity);
+
+        #VARIABLE
+        $registrationName = $dom->createElement('cbc:RegistrationName');
+        $aregistrationName =$dom->createCDATASection($query->nombre);
+        $registrationName->appendChild($aregistrationName);
+        $partyLegalEntity->appendChild($registrationName);
+
+        $neto = round(($total_venta/1.18),2);
+        $igv = $total_venta-$neto;        
+
+        $taxTotal = $dom->createElement('cac:TaxTotal');
+        $debitNote->appendChild($taxTotal);
+
+        #VARIABLE
+        $taxAmount = $dom->createElement('cbc:TaxAmount');
+        $aTaxAmount = $dom->createAttribute('currencyID');
+        $aTaxAmount->value = 'PEN';
+        $taxAmount->appendChild($aTaxAmount);
+        $taxAmount->nodeValue = $igv;
+        $taxTotal->appendChild($taxAmount);
+
+        $taxSubTotal = $dom->createElement('cac:TaxSubtotal');
+        $taxTotal->appendChild($taxSubTotal);
+
+        #VARIABLE
+        $taxableAmount = $dom->createElement('cbc:TaxableAmount');
+        $aTaxableAmount = $dom->createAttribute('currencyID');
+        $aTaxableAmount->value = 'PEN';
+        $taxableAmount->appendChild($aTaxableAmount);
+        $taxableAmount->nodeValue = $neto;
+        $taxSubTotal->appendChild($taxableAmount);
+
+        #VARIABLE
+        $taxAmount = $dom->createElement('cbc:TaxAmount');
+        $aTaxAmount = $dom->createAttribute('currencyID');
+        $aTaxAmount->value = 'PEN';
+        $taxAmount->appendChild($aTaxAmount);
+        $taxAmount->nodeValue = $igv;
+        $taxSubTotal->appendChild($taxAmount);
+
+        $taxCategory = $dom->createElement('cac:TaxCategory');
+        $taxSubTotal->appendChild($taxCategory);
+
+        $taxScheme = $dom->createElement('cac:TaxScheme');
+        $taxCategory->appendChild($taxScheme);
+
+        #VARIABLE
+        $cbcID = $dom->createElement('cbc:ID');
+        $acbcID = $dom->createAttribute('schemeID');
+        $acbcID->value='UN/ECE 5153';
+        $schemeAgencyID = $dom->createAttribute('schemeAgencyID');
+        $schemeAgencyID->value='6';
+        $cbcID->appendChild($acbcID);
+        $cbcID->appendChild($schemeAgencyID);
+        $cbcID->nodeValue = '1000';
+        $taxScheme->appendChild($cbcID);
+
+        $cbcName = $dom->createElement('cbc:Name');
+        $cbcName->nodeValue = 'IGV';
+        $taxScheme->appendChild($cbcName);
+
+        $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
+        $taxTypeCode->nodeValue = 'VAT';
+        $taxScheme->appendChild($taxTypeCode);
+
+        $legalMonetaryTotal = $dom->createElement('cac:RequestedMonetaryTotal');
+        $debitNote->appendChild($legalMonetaryTotal);
+
+        #VARIABLE
+        $payableAmount = $dom->createElement('cbc:PayableAmount');
+        $aPayableAmount = $dom->createAttribute('currencyID');
+        $aPayableAmount->value = 'PEN';
+        $payableAmount->appendChild($aPayableAmount);
+        $payableAmount->nodeValue = number_format(round($total_venta,2),2,'.','');
+        $legalMonetaryTotal->appendChild($payableAmount);
+
+        //debitNoteLINE 1
+        $cont = 1;
+        while($cont <= count($idarticulo)){
+
+            $total_item = $precio_venta[$cont-1]*$cantidad[$cont-1];
+
+            $neto_item = $total_item/1.18;
+            $impuesto = $total_item-$neto_item;
+
+            $debitNoteLine = $dom->createElement('cac:DebitNoteLine');
+            $debitNote->appendChild($debitNoteLine);
+
+            #VARIABLE
+            $cbcID = $dom->createElement('cbc:ID');
+            $cbcID->nodeValue = $cont;
+            $debitNoteLine->appendChild($cbcID);
+
+            #VARIABLE
+            $debitedQuantity = $dom->createElement('cbc:DebitedQuantity');
+            $aDebitedQuantity = $dom->createAttribute('unitCode');
+            $aDebitedQuantity->value = 'NIU';
+            $debitedQuantity->appendChild($aDebitedQuantity);
+            $debitedQuantity->nodeValue = $cantidad[$cont-1];
+            $debitNoteLine->appendChild($debitedQuantity);
+
+            #VARIABLE
+            $lineExtensionAmount = $dom->createElement('cbc:LineExtensionAmount');
+            $aLineExtensionAmount = $dom->createAttribute('currencyID');
+            $aLineExtensionAmount->value = 'PEN';
+            $lineExtensionAmount->appendChild($aLineExtensionAmount);
+            $lineExtensionAmount->nodeValue = number_format(round($neto_item,2),2,'.','');
+            $debitNoteLine->appendChild($lineExtensionAmount);
+
+            $pricingReference = $dom->createElement('cac:PricingReference');
+            $debitNoteLine->appendChild($pricingReference);
+
+            $alternativeConditionPrice = $dom->createElement('cac:AlternativeConditionPrice');
+            $pricingReference->appendChild($alternativeConditionPrice);
+
+            #VARIABLE
+            $priceAmount = $dom->createElement('cbc:PriceAmount');
+            $aPriceAmount = $dom->createAttribute('currencyID');
+            $aPriceAmount->value = 'PEN';
+            $priceAmount->appendChild($aPriceAmount);
+            $priceAmount->nodeValue = number_format(round($precio_venta[$cont-1],2),2,'.','');
+            $alternativeConditionPrice->appendChild($priceAmount);
+
+            #VARIABLE
+            $priceTypeCode = $dom->createElement('cbc:PriceTypeCode');
+            $priceTypeCode->nodeValue = '01';
+            $alternativeConditionPrice->appendChild($priceTypeCode);
+
+            $taxTotal = $dom->createElement('cac:TaxTotal');
+            $debitNoteLine->appendChild($taxTotal);
+
+            #VARIABLE
+            $taxAmount = $dom->createElement('cbc:TaxAmount');
+            $aTaxAmount = $dom->createAttribute('currencyID');
+            $aTaxAmount->value='PEN';
+            $taxAmount->appendChild($aTaxAmount);
+            $taxAmount->nodeValue = number_format(round($impuesto,2),2,'.','');
+            $taxTotal->appendChild($taxAmount);
+
+            $taxSubTotal = $dom->createElement('cac:TaxSubtotal');
+            $taxTotal->appendChild($taxSubTotal);
+
+            #VARIABLE
+            $taxableAmount = $dom->createElement('cbc:TaxableAmount');
+            $aTaxableAmount = $dom->createAttribute('currencyID');
+            $aTaxableAmount->value='PEN';
+            $taxableAmount->appendChild($aTaxableAmount);
+            $taxableAmount->nodeValue = number_format(round($neto_item,2),2,'.','');
+            $taxSubTotal->appendChild($taxableAmount);
+
+            #VARIABLE
+            $taxAmount = $dom->createElement('cbc:TaxAmount');
+            $aTaxAmount = $dom->createAttribute('currencyID');
+            $aTaxAmount->value='PEN';
+            $taxAmount->appendChild($aTaxAmount);
+            $taxAmount->nodeValue = number_format(round($impuesto,2),2,'.','');
+            $taxSubTotal->appendChild($taxAmount);
+
+            $taxCategory = $dom->createElement('cac:TaxCategory');
+            $taxSubTotal->appendChild($taxCategory);
+
+            #VARIABLE
+            $percent = $dom->createElement('cbc:Percent');
+            $percent->nodeValue = '18.00';
+            $taxCategory->appendChild($percent);
+
+            #VARIABLE
+            $taxExemptionReasonCode = $dom->createElement('cbc:TaxExemptionReasonCode');
+            $taxExemptionReasonCode->nodeValue = '10';
+            $taxCategory->appendChild($taxExemptionReasonCode);
+
+            $taxScheme = $dom->createElement('cac:TaxScheme');
+            $taxCategory->appendChild($taxScheme);
+
+            $cbcID = $dom->createElement('cbc:ID');
+            $cbcID->nodeValue = '1000';
+            $taxScheme->appendChild($cbcID);
+
+            $cbcName = $dom->createElement('cbc:Name');
+            $cbcName->nodeValue = 'IGV';
+            $taxScheme->appendChild($cbcName);
+
+            $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
+            $taxTypeCode->nodeValue = 'VAT';
+            $taxScheme->appendChild($taxTypeCode);
+
+            $item = $dom->createElement('cac:Item');
+            $debitNoteLine->appendChild($item);
+
+            $articulo = Articulo::findOrFail($idarticulo[$cont-1]);
+
+            #VARIABLE
+            $description = $dom->createElement('cbc:Description');
+            $adescripcion = $dom->createCDATASection($articulo->nombre);
+            $description->appendChild($adescripcion);
+            $item->appendChild($description);
+
+            // $sellersItemIdentification = $dom->createElement('cac:SellersItemIdentification');
+            // $item->appendChild($sellersItemIdentification);
+
+            // $cbcID = $dom->createElement('cbc:ID');
+            // $cbcID->nodeValue='GLG199';
+            // $sellersItemIdentification->appendChild($cbcID);
+
+            // $comodityClassification = $dom->createElement('cac:CommodityClassification');
+            // $item->appendChild($comodityClassification);
+
+            // $itemClassficationCode = $dom->createElement('cbc:ItemClassificationCode');
+            // $listID = $dom->createAttribute('listID');
+            // $listID->value='UNSPSC';
+            // $listAgencyName = $dom->createAttribute('listAgencyName');
+            // $listAgencyName->value='GS1 US';
+            // $listName = $dom->createAttribute('listName');
+            // $listName->value='Item Classification';
+            // $itemClassficationCode->appendChild($listID);
+            // $itemClassficationCode->appendChild($listAgencyName);
+            // $itemClassficationCode->appendChild($listName);
+            // $itemClassficationCode->nodeValue='45111723';
+            // $comodityClassification->appendChild($itemClassficationCode);
+
+            $price = $dom->createElement('cac:Price');
+            $debitNoteLine->appendChild($price);
+
+            #VARIABLE
+            $priceAmount = $dom->createElement('cbc:PriceAmount');
+            $aPriceAmount = $dom->createAttribute('currencyID');
+            $aPriceAmount->value = 'PEN';
+            $priceAmount->appendChild($aPriceAmount);
+            $priceAmount->nodeValue = number_format(round($precio_venta[$cont-1],2),2,'.','');
+            $price->appendChild($priceAmount);
+            $cont++;
+        }
+
+        
+
+
+
+        // $xmlName = sprintf('%s-%s-%s', "Prueba", '01',1);
+        $xmlName = $empresa->ruc."-".$tipo_comprobante."-".$serie_comprobante."-".$num_comprobante;
+        $xmlPath = public_path().'\cdn/xml/'. $xmlName . '.XML';
+        $xmlFullPath = $xmlPath;
+        file_exists($xmlFullPath) ? unlink($xmlFullPath) : '';
+        \File::put($xmlFullPath, $dom->saveXML());
+        chmod($xmlFullPath, 0777);
+
+
+        // $privateKey = storage_path('sunat/keys/LLAVE_PRIVADA.pem');
+        // $publicKey = storage_path('sunat/keys/LLAVE_PUBLICA.pem');
+        // if (!file_exists($privateKey))
+        //     throw new Exception('No se encuentra la LLAVE PRIVADA');
+        // if (!file_exists($publicKey))
+        //     throw new Exception('No se encuentra la LLAVE PUBLICA');                    
+
+        // $cmdString = sprintf('xmlsec1 --sign --privkey-pem %s,%s --output %s %s', $privateKey, $publicKey,
+        //     $xmlFullPath, $xmlFullPath);
+        // exec($cmdString);
+
+        // while (!file_exists($xmlFullPath)) {
+        //     sleep(1);
+        //     if (file_exists($xmlFullPath)) {
+        //         break;
+        //     }
+        // }
+        // chmod($xmlFullPath, 0777);
+
+
+        //SEGUNDA FORMA DE FIRMAR UN DOCUMENTO 
+
+        // $privateKey = storage_path('sunat/keys/PrivateKey.key');
+        // $publicKey = storage_path('sunat/keys/ServerCertificate.cer');
+        // if (!file_exists($privateKey))
+        //     throw new Exception('No se encuentra la LLAVE PRIVADA');
+        // if (!file_exists($publicKey))
+        //     throw new Exception('No se encuentra la LLAVE PUBLICA');
+
+        // $ReferenceNodeName = 'ExtensionContent';
+
+        // // Load the XML to be signed
+        // $doc = new DOMDocument();
+        // $doc->load($xmlFullPath);
+
+        // // Create a new Security object
+        // $objDSig = new XMLSecurityDSig();
+        // // Use the c14n exclusive canonicalization
+        // $objDSig->setCanonicalMethod(XMLSecurityDSig::C14N);
+        // // Sign using SHA-256
+        // $objDSig->addReference(
+        //     $doc, 
+        //     XMLSecurityDSig::SHA1, 
+        //     array('http://www.w3.org/2000/09/xmldsig#enveloped-signature'),
+        //     $options = array('force_uri' => true)
+        // );
+
+        // // Create a new (private) Security key
+        // $objKey = new XMLSecurityKey(XMLSecurityKey::RSA_SHA1, array('type'=>'private'));
+        // /*
+        // If key has a passphrase, set it using
+        // $objKey->passphrase = '<passphrase>';
+        // */
+
+        // // Load the private key
+        // $objKey->loadKey($privateKey, TRUE);
+        // //$objKey->loadKey('certificates/PrivateKey.key', TRUE);
+
+        // // Sign the XML file
+        // $objDSig->sign($objKey,$doc->getElementsByTagName($ReferenceNodeName)->item(1));
+
+        // // Add the associated public key to the signature
+        // $objDSig->add509Cert(file_get_contents($publicKey));
+        // //$objDSig->add509Cert(file_get_contents('certificates/ServerCertificate.cer'));
+        // // Append the signature to the XML
+        // //die(var_dump($doc->documentElement));
+        // $objDSig->appendSignature($doc->getElementsByTagName($ReferenceNodeName)->item(1));
+        // //$objDSig->appendSignature($ReferenceNodeName);
+        // // Save the signed XML
+        // $doc->save($xmlFullPath);
+
+
+        $privateKey = storage_path('sunat/keys/PrivateKey.key');
+        $publicKey = storage_path('sunat/keys/ServerCertificate.cer');
+        if (!file_exists($privateKey))
+            throw new Exception('No se encuentra la LLAVE PRIVADA');
+        if (!file_exists($publicKey))
+            throw new Exception('No se encuentra la LLAVE PUBLICA');
+
+        $ReferenceNodeName = 'ExtensionContent';
+
+        // Load the XML to be signed
+        $doc = new DOMDocument();
+        $doc->load($xmlFullPath);
+
+        // Create a new Security object 
+        $objDSig = new XMLSecurityDSig();
+        // Use the c14n exclusive canonicalization
+        $objDSig->setCanonicalMethod(XMLSecurityDSig::C14N);
+        // Sign using SHA-256
+        $objDSig->addReference(
+            $doc, 
+            XMLSecurityDSig::SHA1, 
+            array('http://www.w3.org/2000/09/xmldsig#enveloped-signature'),
+            $options = array('force_uri' => true)
+        );
+
+        // Create a new (private) Security key
+        $objKey = new XMLSecurityKey(XMLSecurityKey::RSA_SHA1, array('type'=>'private'));
+        /*
+        If key has a passphrase, set it using
+        $objKey->passphrase = '<passphrase>';
+        */
+
+        // Load the private key
+        $objKey->loadKey($privateKey, TRUE);
+        //$objKey->loadKey('certificates/PrivateKey.key', TRUE);
+
+        // Sign the XML file
+        $objDSig->sign($objKey,$doc->getElementsByTagName($ReferenceNodeName)->item(0));
+
+        // Add the associated public key to the signature
+        $objDSig->add509Cert(file_get_contents($publicKey));
+        //$objDSig->add509Cert(file_get_contents('certificates/ServerCertificate.cer'));
+        // Append the signature to the XML
+        //die(var_dump($doc->documentElement));
+        // LOG::info('-------------------------REFERENCE NODE-------------------------'.$doc->getElementsByTagName($ReferenceNodeName)->item(1));
+        $objDSig->appendSignature($doc->getElementsByTagName($ReferenceNodeName)->item(0));
+        //$objDSig->appendSignature($ReferenceNodeName);
+        // Save the signed XML
+        $doc->save($xmlFullPath);
+
+        /////////////
+        
+
+        $zipPath = 'cdn/document/prueba21' . DIRECTORY_SEPARATOR . $xmlName . '.ZIP';
+        $zipFullPath = public_path($zipPath);
+
+        file_exists($zipFullPath) ? unlink($zipFullPath) : '';
+            \Zipper::make($zipFullPath)->add($xmlFullPath)->close();
+            unlink($xmlFullPath);   
+    }
+
+    public function crearPDF($empresa,$cliente,$items, $leyenda,$firma){
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false,false);
 
         $pdf->setPrintHeader(false);
@@ -790,7 +1454,8 @@ class CreditNote
         $pdf->SetCellPadding(0.5);
 
         # Logo
-        $logo = public_path('/static/images/logo_pdf_a4_default.jpg');
+        // $logo = public_path('/static/images/logo_pdf_a4_default.jpg');
+        $logo = public_path('/static/images/ESERSEC.png');
         if (file_exists(public_path('/static/images/logo_pdf_a4.jpg'))) {
             $logo = public_path('/static/images/logo_pdf_a4.jpg');
         }
@@ -803,6 +1468,9 @@ class CreditNote
 
         # Breve descripción de la empresa emisora
         $rhm = $pdf->getStringHeight(0, 'string');
+        $pdf->MultiCell(74, 0, $empresa->razon_social, 'L', 'L', false, 1, '', '', true, 0, false,
+            false, $rhm);
+        $pdf->SetX($x);
         $pdf->MultiCell(74, 0, $empresa->direccion, 'L', 'L', false, 1, '', '', true, 0, false,
             false, $rhm);
         $pdf->SetX($x);
@@ -822,12 +1490,21 @@ class CreditNote
             true, 7, 'M');
         $pdf->Ln(0);
         $pdf->SetX(140);
-        $pdf->SetFont('helvetica', '', 12);
+        // $pdf->SetFont('helvetica', '', 12);
         if($cliente->tipo_comprobante=='01'){
             $pdf->MultiCell(65, 8, 'FACTURA ELECTRÓNICA', 'LR', 'C', false, 1, '', '', true, 0, false, true, 8, 'M');
-        }else{
+        }
+        if($cliente->tipo_comprobante=='03'){
             $pdf->MultiCell(65, 8, 'BOLETA ELECTRÓNICA', 'LR', 'C', false, 1, '', '', true, 0, false, true, 8, 'M');
         }
+        if($cliente->tipo_comprobante=='07'){
+            $pdf->MultiCell(65, 8, 'NOTA DE CRÉDITO ELECTRÓNICA', 'LR', 'C', false, 1, '', '', true, 0, false, true, 8, 'M');
+        }
+        if($cliente->tipo_comprobante=='08'){
+            $pdf->MultiCell(65, 8, 'NOTA DE DÉBITO ELECTRÓNICA', 'LR', 'C', false, 1, '', '', true, 0, false, true, 8, 'M');
+        }
+        
+
         $pdf->Ln(0);
         $pdf->SetX(140);
         $pdf->SetFont('helvetica', '', 10);
@@ -883,16 +1560,45 @@ class CreditNote
         $pdf->SetXY(172, $y);
         $pdf->MultiCell(10, 4, ':', '', 'C');
         $pdf->SetXY(182, $y);
-        $pdf->MultiCell(23, 4, '01/10/2016', 'R', 'L');
+        // $time = ;
+        // $newformat = ;
+        $pdf->MultiCell(23, 4, date('d/m/Y',strtotime($cliente->fecha_hora)), 'R', 'L');
         $pdf->SetXY(140, 37);
         $y = $pdf->GetY();
         $pdf->MultiCell(32, 4, 'FECHA VENCIMIENTO', 'BL', 'L');
         $pdf->SetXY(172, $y);
         $pdf->MultiCell(10, 4, ':', 'B', 'C');
         $pdf->SetXY(182, $y);
-        $pdf->MultiCell(23, 4, '31/10/2016', 'BR', 'L');
+        $pdf->MultiCell(23, 4, date('d/m/Y',strtotime($cliente->fecha_hora)), 'BR', 'L');
         
         # Fila descriptiva del clientes
+
+        $pdf->Ln(1.5);
+        $pdf->SetX(5);
+        $y = $pdf->GetY();
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->MultiCell(200, 4, 'DOCUMENTO QUE MODIFICA', 1, 'C', true, 1);
+
+        $pdf->Ln(0);
+        $pdf->SetX(5);
+        $y = $pdf->GetY();
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->MultiCell(60, 4, 'TIPO DOCUMENTO', 1, 'C', false, 0);
+        $pdf->MultiCell(40, 4, 'NÚMERO', 1, 'C', false, 0);
+        $pdf->MultiCell(100, 4, 'MOTIVO', 1, 'C', false, 1);
+
+        $pdf->Ln(0);
+        $pdf->SetX(5);
+        $pdf->SetTextColor(0, 0, 0);
+        if($cliente->docmodifica_tipo=='01'){
+            $pdf->MultiCell(60, 4, 'FACTURA ELECTRÓNICA', 1, 'C', false, 0);
+        }
+        if($cliente->docmodifica_tipo=='03'){
+            $pdf->MultiCell(60, 4, 'BOLETA ELECTRÓNICA', 1, 'C', false, 0);
+        }
+        $pdf->MultiCell(40, 4, $cliente->docmodifica, 1, 'C', false, 0);
+        $pdf->MultiCell(100, 4, $cliente->modifica_motivo.'-'.$cliente->modifica_motivod, 1, 'C', false, 1);        
+
         $pdf->Ln(1.5);
         $pdf->SetX(5);
         $y = $pdf->GetY();
@@ -911,7 +1617,7 @@ class CreditNote
         $pdf->MultiCell(28, 4, '', 1, 'C', false, 0);
         $pdf->MultiCell(35, 4, '', 1, 'C', false, 0);
         $pdf->MultiCell(40, 4, '', 1, 'C', false, 0);
-        $pdf->MultiCell(40, 4, 'A 30 Días', 1, 'C', false, 0);
+        $pdf->MultiCell(40, 4, '', 1, 'C', false, 0);
         $pdf->MultiCell(25, 4, '', 1, 'C', false, 1);
 
         $pdf->Ln(1.5);
@@ -1088,7 +1794,7 @@ class CreditNote
         
             $append[] = '';
         
-            $append[] = 'SON: '.$leyenda;
+            $append[] = 'SON: '.$leyenda .' SOLES';
         
             $append[] = "S.E.U.O.";
         
@@ -1216,14 +1922,19 @@ class CreditNote
         $x = $pdf->GetX();
         $pdf->SetXY($x, $y);
         $pdf->SetFont('helvetica', 'B', 8);
-        $pdf->MultiCell(100, 0, 'Representación Impresa de la ' . "FACTURA ELECTRÓNICA", '', 'C');
+        if($cliente->tipo_comprobante=='07'){
+            $pdf->MultiCell(100, 0, 'Representación Impresa de la ' . "NOTA DE CRÉDITO ELECTRÓNICA", '', 'C');
+        }
+        if($cliente->tipo_comprobante=='08'){
+            $pdf->MultiCell(100, 0, 'Representación Impresa de la ' . "NOTA DE DÉBITO ELECTRÓNICA", '', 'C');
+        }
         $pdf->SetFont('helvetica', '', 8);
         $pdf->MultiCell(100, 0, 'Autorizado mediante Resolución de Intendencia Nº ' . "034-005-0006241/SUNAT", '', 'C');
         $pdf->SetFont('helvetica', 'B', 8);
-        $pdf->MultiCell(100, 0, 'Consulta tu comprobante en nuestra web ' . env('URL_CONSULTA_WEB'), '', 'C');    
+        $pdf->MultiCell(100, 0, 'Consulta tu comprobante en nuestra web ' . env('URL_CONSULTA_WEB'), '', 'C');
         //$pdf->write2DBarcode($data['codigoBarra'], 'PDF417', $x + 140, $y, 70);
-        
-        $pdf->write2DBarcode('irving123456', 'QRCODE,L', $x + 180, $y, 20);        
+        $qr = $empresa->ruc."|".$cliente->tipo_comprobante."|".$cliente->serie_comprobante."|".$cliente->num_comprobante."|".round($igv,2)."|".round($total,2)."|".date('Y-m-d',strtotime($cliente->fecha_hora))."|"."|6|".$cliente->num_documento."|".$firma;
+        $pdf->write2DBarcode($qr, 'QRCODE,L', $x + 180, $y, 20);
 
 
 

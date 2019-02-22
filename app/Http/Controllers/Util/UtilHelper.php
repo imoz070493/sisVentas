@@ -125,13 +125,13 @@ class UtilHelper
                         break;
                     case 2:
                         if ($xcifra < 1) {
-                            $xcadena = "CERO y $xdecimales/100";
+                            $xcadena = "CERO CON $xdecimales/100";
                         }
                         if ($xcifra >= 1 && $xcifra < 2) {
-                            $xcadena = "UN y $xdecimales/100";
+                            $xcadena = "UN CON $xdecimales/100";
                         }
                         if ($xcifra >= 2) {
-                            $xcadena.= "  y $xdecimales/100"; //
+                            $xcadena.= "  CON $xdecimales/100"; //
                         }
                         break;
                 } // endswitch ($xz)

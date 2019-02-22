@@ -15,6 +15,7 @@ class CategoriaController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permisoAlmacen');
     }
 
     public function index(Request $request)
@@ -26,6 +27,14 @@ class CategoriaController extends Controller
     			->where('condicion','=','1')
     			->orderBy('idcategoria','desc')
     			->paginate(7);
+
+            $permiso = DB::table('permiso')
+                ->where('idrol','=',\Auth::user()->idrol)
+                ->orderBy('idrol','desc')
+                ->get();
+
+            $request->session()->put('permiso',$permiso);
+
     		return view('almacen.categoria.index',["categorias"=>$categorias,"searchText"=>$query]);
     	}
 

@@ -16,7 +16,7 @@
 	</div>
 
 			{!!Form::open(array('url'=>'ventas/notas','method'=>'POST','autocomplete'=>'off'))!!}
-			{{Form::token()}}	
+			{{Form::token()}}
 	<div class="row">
 		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
 			<div class="form-group">
@@ -252,6 +252,7 @@
 			console.log('Fila :'+i+' : '+subtotal[i])
 		}	
 		$("#total").html(total);
+		$("#total_venta").val(total);
 	}
 
 	$(document).on("click", ".btn-check-tc", function(){
@@ -279,7 +280,8 @@
     	// console.log($("#motivo option:selected").text())
 
         $.ajax({
-            url: "/notas/detalle",
+            // url: "/notas/detalle",
+            url: "{{ asset('notas/detalle') }}",
             type: "post",
             headers: {'X-CSRF-TOKEN': token},
             // dataType: 'json',
@@ -342,7 +344,8 @@
 			$('#motivo').append($('<option>', {value:'03', text:'PENALIDADES'}));
 		}
 		$.ajax({
-            url: "/notas/peticion",
+            // url: "/notas/peticion",
+            url: "{{ asset('notas/peticion') }}",
             type: "post",
             headers: {'X-CSRF-TOKEN': token},
             // dataType: 'json',

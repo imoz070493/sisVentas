@@ -45,7 +45,7 @@ class SummaryDocumentsCore
         //dd($name,$nameExplode);
 
         try {
-            $sunatRequest = $this->newSunatRequest('beta');
+            $sunatRequest = $this->newSunatRequest(env('SUNAT_SERVER'));
             if (!$sunatRequest['status']) {
                 throw new Exception($sunatRequest['message']);
             }
@@ -125,6 +125,7 @@ class SummaryDocumentsCore
                             $error = $sendSummary->faultcode;
                             $errorExplode = explode('.', $error);
                             $errorCode = end($errorExplode);
+                            LOG::info("Error: ".$errorCode);
                             $errErrorCode = ErrErrorCode::find($errorCode);
                             throw new Exception($errErrorCode->c_description);
                     }
@@ -370,7 +371,7 @@ class SummaryDocumentsCore
         return $response;
     }
 
-    public static function buildSummaryDocumentXml($idcliente,$tipo_comprobante,$serie_comprobante,$num_comprobante,$total_venta,$leyenda,$fecha,$hora,$idarticulo,$cantidad,$precio_venta,$ruc){
+    public static function buildSummaryDocumentXml($empresa,$fechaReferencia,$fechaActual,$numDate,$numero_comprobante,$comprobantes){
         $dom = new DOMDocument('1.0', 'UTF-8');
         #$dom->preserveWhiteSpace = false;
         $dom->xmlStandalone = false;
@@ -455,28 +456,36 @@ class SummaryDocumentsCore
         $customizationID->nodeValue = '1.1';
         $summaryDocuments->appendChild($customizationID);
 
+        #VARIABLE 
         $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = 'RC-20171218-900';
+        $cbcID->nodeValue = 'RC-'.$numDate.'-'.$numero_comprobante;
         $summaryDocuments->appendChild($cbcID);
 
+        #VARIABLE
         $referenceDate = $dom->createElement('cbc:ReferenceDate');
-        $referenceDate->nodeValue = '2017-12-18';
+        $referenceDate->nodeValue = $fechaReferencia;
         $summaryDocuments->appendChild($referenceDate);
 
+        #VARIABLE
         $issueDate = $dom->createElement('cbc:IssueDate');
-        $issueDate->nodeValue = '2017-12-18';
+        $issueDate->nodeValue = $fechaActual;
         $summaryDocuments->appendChild($issueDate);
 
-
-        $note = $dom->createElement('cbc:Note');
-        $note->appendChild($dom->createCDATASection('CONSOLIDADO DE BOLETAS DE VENTA'));
-        $summaryDocuments->appendChild($note);
+        // $note = $dom->createElement('cbc:Note');
+        // $note->appendChild($dom->createCDATASection('CONSOLIDADO DE BOLETAS DE VENTA'));
+        // $summaryDocuments->appendChild($note);
 
         $signature = $dom->createElement('cac:Signature');
         $summaryDocuments->appendChild($signature);
 
+        #VARIABLE
         $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = 'SRC-20171218-900';
+        if($comprobante->estado =='0'){
+            $cbcID->nodeValue = $empresa->ruc;
+        }
+        if($comprobante->estado =='4'){
+            $cbcID->nodeValue = 'RC-'.$numDate.'-'.$numero_comprobante;
+        }
         $signature->appendChild($cbcID);
 
         $signatoryParty = $dom->createElement('cac:SignatoryParty');
@@ -485,15 +494,17 @@ class SummaryDocumentsCore
         $partyIdentification = $dom->createElement('cac:PartyIdentification');
         $signatoryParty->appendChild($partyIdentification);
 
+        #VARIABLE
         $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = '20480072872';
+        $cbcID->nodeValue = $empresa->ruc;
         $partyIdentification->appendChild($cbcID);
 
         $partyName = $dom->createElement('cac:PartyName');
         $signatoryParty->appendChild($partyName);
 
+        #VARIABLE
         $cbcName = $dom->createElement('cbc:Name');
-        $cbcName->appendChild($dom->createCDATASection('SUNAT'));
+        $cbcName->appendChild($dom->createCDATASection($empresa->razon_social));
         $partyName->appendChild($cbcName);
 
         $digitalSignatoreAttachment = $dom->createElement('cac:DigitalSignatureAttachment');
@@ -502,18 +513,26 @@ class SummaryDocumentsCore
         $externalReference = $dom->createElement('cac:ExternalReference');
         $digitalSignatoreAttachment->appendChild($externalReference);
 
+        #VARIABLE
         $cbcURI = $dom->createElement('cbc:URI');
-        $cbcURI->nodeValue = '#SRC-20171218-900';
+        if($comprobante->estado =='0'){
+            $cbcURI->nodeValue = $empresa->ruc;
+        }
+        if($comprobante->estado =='4'){
+            $cbcURI->nodeValue = 'RC-'.$numDate.'-'.$numero_comprobante;
+        }
         $externalReference->appendChild($cbcURI);
 
 
         $accountSupplierParty = $dom->createElement('cac:AccountingSupplierParty');
         $summaryDocuments->appendChild($accountSupplierParty);
 
+        #VARIABLE
         $customerAssignedAccountID = $dom->createElement('cbc:CustomerAssignedAccountID');
-        $customerAssignedAccountID->nodeValue = '20480072872';
+        $customerAssignedAccountID->nodeValue = $empresa->ruc;
         $accountSupplierParty->appendChild($customerAssignedAccountID);
 
+        #VARIABLE
         $additionalAccountID = $dom->createElement('cbc:AdditionalAccountID');
         $additionalAccountID->nodeValue = '6';
         $accountSupplierParty->appendChild($additionalAccountID);
@@ -524,461 +543,493 @@ class SummaryDocumentsCore
         $partyLegalEntity = $dom->createElement('cac:PartyLegalEntity');
         $party->appendChild($partyLegalEntity);
 
+        #VARIABLE
         $cbcRegistrationName = $dom->createElement('cbc:RegistrationName');
-        $cbcRegistrationName->appendChild($dom->createCDATASection('CORPORACION AMERICA S.A.'));
+        $cbcRegistrationName->appendChild($dom->createCDATASection($empresa->razon_social));
         $partyLegalEntity->appendChild($cbcRegistrationName);
 
 
 
         //PRIMER DOCUMENTO
 
-        $summaryDocumentsLine = $dom->createElement('sac:SummaryDocumentsLine');
-        $summaryDocuments->appendChild($summaryDocumentsLine);
-
-        $cbcLineID = $dom->createElement('cbc:LineID');
-        $cbcLineID->nodeValue = '1';
-        $summaryDocumentsLine->appendChild($cbcLineID);
-
-        $documentTypeCode = $dom->createElement('cbc:DocumentTypeCode');
-        $documentTypeCode->nodeValue = '03';
-        $summaryDocumentsLine->appendChild($documentTypeCode);
-
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = 'B1A5-1101001';
-        $summaryDocumentsLine->appendChild($cbcID);
-
-        $accountingCustomerParty =  $dom->createElement('cac:AccountingCustomerParty');
-        $summaryDocumentsLine->appendChild($accountingCustomerParty);
-
-        $customerAssignedAccountID = $dom->createElement('cbc:CustomerAssignedAccountID');
-        $customerAssignedAccountID->nodeValue = '10098237761';
-        $accountingCustomerParty->appendChild($customerAssignedAccountID);
-
-        $additionalAccountID = $dom->createElement('cbc:AdditionalAccountID');
-        $additionalAccountID->nodeValue = '6';
-        $accountingCustomerParty->appendChild($additionalAccountID);
-
-        $status = $dom->createElement('cac:Status');
-        $summaryDocumentsLine->appendChild($status);
-
-        $conditionCode = $dom->createElement('cbc:ConditionCode');
-        $conditionCode->nodeValue = '1';
-        $status->appendChild($conditionCode);
-
-        $totalAmount = $dom->createElement('sac:TotalAmount');
-        $nTotalAmount = $dom->createAttribute('currencyID');
-        $nTotalAmount->value = 'PEN';
-        $totalAmount->appendChild($nTotalAmount);
-        $totalAmount->nodeValue = '3207.00';
-        $summaryDocumentsLine->appendChild($totalAmount);
-
-        $billingPayment = $dom->createElement('sac:BillingPayment');
-        $summaryDocumentsLine->appendChild($billingPayment);
-
-        $paidAmount = $dom->createElement('cbc:PaidAmount');
-        $nPaidAmount = $dom->createAttribute('currencyID');
-        $nPaidAmount->value='PEN';
-        $paidAmount->appendChild($nPaidAmount);
-        $paidAmount->nodeValue = 1500.00;
-        $billingPayment->appendChild($paidAmount);
-
-        $instructionID = $dom->createElement('cbc:InstructionID');
-        $instructionID->nodeValue = '01';
-        $billingPayment->appendChild($instructionID);
-
-        /////////////////////////////////
-        $billingPayment = $dom->createElement('sac:BillingPayment');
-        $summaryDocumentsLine->appendChild($billingPayment);
-
-        $paidAmount = $dom->createElement('cbc:PaidAmount');
-        $nPaidAmount = $dom->createAttribute('currencyID');
-        $nPaidAmount->value='PEN';
-        $paidAmount->appendChild($nPaidAmount);
-        $paidAmount->nodeValue = 1.00;
-        $billingPayment->appendChild($paidAmount);
-
-        $instructionID = $dom->createElement('cbc:InstructionID');
-        $instructionID->nodeValue = '02';
-        $billingPayment->appendChild($instructionID);
-
-        /////////////////////////////////
-        $billingPayment = $dom->createElement('sac:BillingPayment');
-        $summaryDocumentsLine->appendChild($billingPayment);
-
-        $paidAmount = $dom->createElement('cbc:PaidAmount');
-        $nPaidAmount = $dom->createAttribute('currencyID');
-        $nPaidAmount->value='PEN';
-        $paidAmount->appendChild($nPaidAmount);
-        $paidAmount->nodeValue = 232.00;
-        $billingPayment->appendChild($paidAmount);
-
-        $instructionID = $dom->createElement('cbc:InstructionID');
-        $instructionID->nodeValue = '03';
-        $billingPayment->appendChild($instructionID);
-
-        $allowanceCharge = $dom->createElement('cac:AllowanceCharge');
-        $summaryDocumentsLine->appendChild($allowanceCharge);
-
-        $chargeIndicator = $dom->createElement('cbc:ChargeIndicator');
-        $chargeIndicator->nodeValue = 'true';
-        $allowanceCharge->appendChild($chargeIndicator);
-
-        $amount = $dom->createElement('cbc:Amount');
-        $nAmount = $dom->createAttribute('currencyID');
-        $nAmount->value = 'PEN';
-        $amount->appendChild($nAmount); 
-        $amount->nodeValue = '5.00';        
-        $allowanceCharge->appendChild($amount);
-
-
-        $taxTotal = $dom->createElement('cac:TaxTotal');
-        $summaryDocumentsLine->appendChild($taxTotal);
-
-        $taxAmount = $dom->createElement('cbc:TaxAmount');
-        $nTaxAmount = $dom->createAttribute('currencyID');
-        $nTaxAmount->value='PEN';
-        $taxAmount->appendChild($nTaxAmount);
-        $taxAmount->nodeValue = '270.00';
-        $taxTotal->appendChild($taxAmount);
-
-        $taxSubtotal = $dom->createElement('cac:TaxSubtotal');
-        $taxTotal->appendChild($taxSubtotal);
-
-        $taxAmount = $dom->createElement('cbc:TaxAmount');
-        $nTaxAmount = $dom->createAttribute('currencyID');
-        $nTaxAmount->value='PEN';
-        $taxAmount->appendChild($nTaxAmount);
-        $taxAmount->nodeValue = '270.00';
-        $taxSubtotal->appendChild($taxAmount);
-
-        $taxCategory =$dom->createElement('cac:TaxCategory');
-        $taxSubtotal->appendChild($taxCategory);
-
-        $taxScheme = $dom->createElement('cac:TaxScheme');
-        $taxCategory->appendChild($taxScheme);
-
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = '1000';
-        $taxScheme->appendChild($cbcID);
-
-        $cbcName = $dom->createElement('cbc:Name');
-        $cbcName->nodeValue = 'IGV';
-        $taxScheme->appendChild($cbcName);
-
-        $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
-        $taxTypeCode->nodeValue = 'VAT';
-        $taxScheme->appendChild($taxTypeCode);
-
-
-        $taxTotal = $dom->createElement('cac:TaxTotal');
-        $summaryDocumentsLine->appendChild($taxTotal);
-
-        $taxAmount = $dom->createElement('cbc:TaxAmount');
-        $nTaxAmount = $dom->createAttribute('currencyID');
-        $nTaxAmount->value='PEN';
-        $taxAmount->appendChild($nTaxAmount);
-        $taxAmount->nodeValue = '1200.00';
-        $taxTotal->appendChild($taxAmount);
-
-        $taxSubtotal = $dom->createElement('cac:TaxSubtotal');
-        $taxTotal->appendChild($taxSubtotal);
-
-        $taxAmount = $dom->createElement('cbc:TaxAmount');
-        $nTaxAmount = $dom->createAttribute('currencyID');
-        $nTaxAmount->value='PEN';
-        $taxAmount->appendChild($nTaxAmount);
-        $taxAmount->nodeValue = '1200.00';
-        $taxSubtotal->appendChild($taxAmount);
-
-        $taxCategory =$dom->createElement('cac:TaxCategory');
-        $taxSubtotal->appendChild($taxCategory);
-
-        $taxScheme = $dom->createElement('cac:TaxScheme');
-        $taxCategory->appendChild($taxScheme);
-
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = '9999';
-        $taxScheme->appendChild($cbcID);
-
-        $cbcName = $dom->createElement('cbc:Name');
-        $cbcName->nodeValue = 'OTROS';
-        $taxScheme->appendChild($cbcName);
-
-        $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
-        $taxTypeCode->nodeValue = 'OTH';
-        $taxScheme->appendChild($taxTypeCode);
-
-
-        //SEGUNDO DOCUMENTO
-
-        $summaryDocumentsLine = $dom->createElement('sac:SummaryDocumentsLine');
-        $summaryDocuments->appendChild($summaryDocumentsLine);
-
-        $cbcLineID = $dom->createElement('cbc:LineID');
-        $cbcLineID->nodeValue = '2';
-        $summaryDocumentsLine->appendChild($cbcLineID);
-
-        $documentTypeCode = $dom->createElement('cbc:DocumentTypeCode');
-        $documentTypeCode->nodeValue = '03';
-        $summaryDocumentsLine->appendChild($documentTypeCode);
-
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = 'B1A5-1101002';
-        $summaryDocumentsLine->appendChild($cbcID);
-
-        $accountingCustomerParty =  $dom->createElement('cac:AccountingCustomerParty');
-        $summaryDocumentsLine->appendChild($accountingCustomerParty);
-
-        $customerAssignedAccountID = $dom->createElement('cbc:CustomerAssignedAccountID');
-        $customerAssignedAccountID->nodeValue = '10401308487';
-        $accountingCustomerParty->appendChild($customerAssignedAccountID);
-
-        $additionalAccountID = $dom->createElement('cbc:AdditionalAccountID');
-        $additionalAccountID->nodeValue = '6';
-        $accountingCustomerParty->appendChild($additionalAccountID);
-
-        $status = $dom->createElement('cac:Status');
-        $summaryDocumentsLine->appendChild($status);
-
-        $conditionCode = $dom->createElement('cbc:ConditionCode');
-        $conditionCode->nodeValue = '1';
-        $status->appendChild($conditionCode);
-
-        $totalAmount = $dom->createElement('sac:TotalAmount');
-        $nTotalAmount = $dom->createAttribute('currencyID');
-        $nTotalAmount->value = 'PEN';
-        $totalAmount->appendChild($nTotalAmount);
-        $totalAmount->nodeValue = '1044.00';
-        $summaryDocumentsLine->appendChild($totalAmount);
-
-        $billingPayment = $dom->createElement('sac:BillingPayment');
-        $summaryDocumentsLine->appendChild($billingPayment);
-
-        $paidAmount = $dom->createElement('cbc:PaidAmount');
-        $nPaidAmount = $dom->createAttribute('currencyID');
-        $nPaidAmount->value='PEN';
-        $paidAmount->appendChild($nPaidAmount);
-        $paidAmount->nodeValue = 800.00;
-        $billingPayment->appendChild($paidAmount);
-
-        $instructionID = $dom->createElement('cbc:InstructionID');
-        $instructionID->nodeValue = '01';
-        $billingPayment->appendChild($instructionID);
-
-        /////////////////////////////////
-        $billingPayment = $dom->createElement('sac:BillingPayment');
-        $summaryDocumentsLine->appendChild($billingPayment);
-
-        $paidAmount = $dom->createElement('cbc:PaidAmount');
-        $nPaidAmount = $dom->createAttribute('currencyID');
-        $nPaidAmount->value='PEN';
-        $paidAmount->appendChild($nPaidAmount);
-        $paidAmount->nodeValue = 100.00;
-        $billingPayment->appendChild($paidAmount);
-
-        $instructionID = $dom->createElement('cbc:InstructionID');
-        $instructionID->nodeValue = '02';
-        $billingPayment->appendChild($instructionID);
-
-        /////////////////////////////////
-        $billingPayment = $dom->createElement('sac:BillingPayment');
-        $summaryDocumentsLine->appendChild($billingPayment);
-
-        $paidAmount = $dom->createElement('cbc:PaidAmount');
-        $nPaidAmount = $dom->createAttribute('currencyID');
-        $nPaidAmount->value='PEN';
-        $paidAmount->appendChild($nPaidAmount);
-        $paidAmount->nodeValue = 1.00;
-        $billingPayment->appendChild($paidAmount);
-
-        $instructionID = $dom->createElement('cbc:InstructionID');
-        $instructionID->nodeValue = '03';
-        $billingPayment->appendChild($instructionID);
-
-        $taxTotal = $dom->createElement('cac:TaxTotal');
-        $summaryDocumentsLine->appendChild($taxTotal);
-
-        $taxAmount = $dom->createElement('cbc:TaxAmount');
-        $nTaxAmount = $dom->createAttribute('currencyID');
-        $nTaxAmount->value='PEN';
-        $taxAmount->appendChild($nTaxAmount);
-        $taxAmount->nodeValue = '144.00';
-        $taxTotal->appendChild($taxAmount);
-
-        $taxSubtotal = $dom->createElement('cac:TaxSubtotal');
-        $taxTotal->appendChild($taxSubtotal);
-
-        $taxAmount = $dom->createElement('cbc:TaxAmount');
-        $nTaxAmount = $dom->createAttribute('currencyID');
-        $nTaxAmount->value='PEN';
-        $taxAmount->appendChild($nTaxAmount);
-        $taxAmount->nodeValue = '144.00';
-        $taxSubtotal->appendChild($taxAmount);
-
-        $taxCategory =$dom->createElement('cac:TaxCategory');
-        $taxSubtotal->appendChild($taxCategory);
-
-        $taxScheme = $dom->createElement('cac:TaxScheme');
-        $taxCategory->appendChild($taxScheme);
-
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = '1000';
-        $taxScheme->appendChild($cbcID);
-
-        $cbcName = $dom->createElement('cbc:Name');
-        $cbcName->nodeValue = 'IGV';
-        $taxScheme->appendChild($cbcName);
-
-        $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
-        $taxTypeCode->nodeValue = 'VAT';
-        $taxScheme->appendChild($taxTypeCode);
-
-
-        //TERCER DOCUMENTO
-
-        $summaryDocumentsLine = $dom->createElement('sac:SummaryDocumentsLine');
-        $summaryDocuments->appendChild($summaryDocumentsLine);
-
-        $cbcLineID = $dom->createElement('cbc:LineID');
-        $cbcLineID->nodeValue = '3';
-        $summaryDocumentsLine->appendChild($cbcLineID);
-
-        $documentTypeCode = $dom->createElement('cbc:DocumentTypeCode');
-        $documentTypeCode->nodeValue = '07';
-        $summaryDocumentsLine->appendChild($documentTypeCode);
-
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = 'BC20-171872';
-        $summaryDocumentsLine->appendChild($cbcID);
-
-        $accountingCustomerParty =  $dom->createElement('cac:AccountingCustomerParty');
-        $summaryDocumentsLine->appendChild($accountingCustomerParty);
-
-        $customerAssignedAccountID = $dom->createElement('cbc:CustomerAssignedAccountID');
-        $customerAssignedAccountID->nodeValue = '09728737';
-        $accountingCustomerParty->appendChild($customerAssignedAccountID);
-
-        $additionalAccountID = $dom->createElement('cbc:AdditionalAccountID');
-        $additionalAccountID->nodeValue = '1';
-        $accountingCustomerParty->appendChild($additionalAccountID);
-
-        $billingReference = $dom->createElement('cac:BillingReference');
-        $summaryDocumentsLine->appendChild($billingReference);
-
-        $invoiceDocumentReference = $dom->createElement('cac:InvoiceDocumentReference');
-        $billingReference->appendChild($invoiceDocumentReference);
-
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = 'B1A5-1100992';
-        $invoiceDocumentReference->appendChild($cbcID);
-
-        $documentTypeCode = $dom->createElement('cbc:DocumentTypeCode');
-        $documentTypeCode->nodeValue='03';
-        $invoiceDocumentReference->appendChild($documentTypeCode);
-
-        $status = $dom->createElement('cac:Status');
-        $summaryDocumentsLine->appendChild($status);
-
-        $conditionCode = $dom->createElement('cbc:ConditionCode');
-        $conditionCode->nodeValue='1';
-        $status->appendChild($conditionCode);
-
-        $totalAmount = $dom->createElement('sac:TotalAmount');
-        $nTotalAmount = $dom->createAttribute('currencyID');
-        $nTotalAmount->value='PEN';
-        $totalAmount->appendChild($nTotalAmount);
-        $totalAmount->nodeValue = '1416.00';
-        $summaryDocumentsLine->appendChild($totalAmount);
-
-        $billingPayment = $dom->createElement('sac:BillingPayment');
-        $summaryDocumentsLine->appendChild($billingPayment);
-
-        $paidAmount = $dom->createElement('cbc:PaidAmount');
-        $nPaidAmount = $dom->createAttribute('currencyID');
-        $nPaidAmount->value='PEN';
-        $paidAmount->appendChild($nPaidAmount);
-        $paidAmount->nodeValue = 1200.00;
-        $billingPayment->appendChild($paidAmount);
-
-        $instructionID = $dom->createElement('cbc:InstructionID');
-        $instructionID->nodeValue = '01';
-        $billingPayment->appendChild($instructionID);
-
-        /////////////////////////////////
-        $billingPayment = $dom->createElement('sac:BillingPayment');
-        $summaryDocumentsLine->appendChild($billingPayment);
-
-        $paidAmount = $dom->createElement('cbc:PaidAmount');
-        $nPaidAmount = $dom->createAttribute('currencyID');
-        $nPaidAmount->value='PEN';
-        $paidAmount->appendChild($nPaidAmount);
-        $paidAmount->nodeValue = 1.00;
-        $billingPayment->appendChild($paidAmount);
-
-        $instructionID = $dom->createElement('cbc:InstructionID');
-        $instructionID->nodeValue = '02';
-        $billingPayment->appendChild($instructionID);
-
-        /////////////////////////////////
-        $billingPayment = $dom->createElement('sac:BillingPayment');
-        $summaryDocumentsLine->appendChild($billingPayment);
-
-        $paidAmount = $dom->createElement('cbc:PaidAmount');
-        $nPaidAmount = $dom->createAttribute('currencyID');
-        $nPaidAmount->value='PEN';
-        $paidAmount->appendChild($nPaidAmount);
-        $paidAmount->nodeValue = 1.00;
-        $billingPayment->appendChild($paidAmount);
-
-        $instructionID = $dom->createElement('cbc:InstructionID');
-        $instructionID->nodeValue = '03';
-        $billingPayment->appendChild($instructionID);
-
-        $taxTotal = $dom->createElement('cac:TaxTotal');
-        $summaryDocumentsLine->appendChild($taxTotal);
-
-        $taxAmount = $dom->createElement('cbc:TaxAmount');
-        $nTaxAmount = $dom->createAttribute('currencyID');
-        $nTaxAmount->value='PEN';
-        $taxAmount->appendChild($nTaxAmount);
-        $taxAmount->nodeValue = '216.00';
-        $taxTotal->appendChild($taxAmount);
-
-        $taxSubtotal = $dom->createElement('cac:TaxSubtotal');
-        $taxTotal->appendChild($taxSubtotal);
-
-        $taxAmount = $dom->createElement('cbc:TaxAmount');
-        $nTaxAmount = $dom->createAttribute('currencyID');
-        $nTaxAmount->value='PEN';
-        $taxAmount->appendChild($nTaxAmount);
-        $taxAmount->nodeValue = '216.00';
-        $taxSubtotal->appendChild($taxAmount);
-
-        $taxCategory =$dom->createElement('cac:TaxCategory');
-        $taxSubtotal->appendChild($taxCategory);
-
-        $taxScheme = $dom->createElement('cac:TaxScheme');
-        $taxCategory->appendChild($taxScheme);
-
-        $cbcID = $dom->createElement('cbc:ID');
-        $cbcID->nodeValue = '1000';
-        $taxScheme->appendChild($cbcID);
-
-        $cbcName = $dom->createElement('cbc:Name');
-        $cbcName->nodeValue = 'IGV';
-        $taxScheme->appendChild($cbcName);
-
-        $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
-        $taxTypeCode->nodeValue = 'VAT';
-        $taxScheme->appendChild($taxTypeCode);
-
-
+        $i = 1;
+        foreach($comprobantes as $comprobante)
+        {
+
+            $neto_item = $comprobante->total_venta/1.18;
+            $impuesto = $comprobante->total_venta-$neto_item;
+
+            $summaryDocumentsLine = $dom->createElement('sac:SummaryDocumentsLine');
+            $summaryDocuments->appendChild($summaryDocumentsLine);
+
+            #VARIABLE
+            $cbcLineID = $dom->createElement('cbc:LineID');
+            $cbcLineID->nodeValue = $i;
+            $summaryDocumentsLine->appendChild($cbcLineID);
+
+            #VARIABLE
+            $documentTypeCode = $dom->createElement('cbc:DocumentTypeCode');
+            $documentTypeCode->nodeValue = $comprobante->tipo_comprobante;
+            $summaryDocumentsLine->appendChild($documentTypeCode);
+
+            #VARIABLE
+            $cbcID = $dom->createElement('cbc:ID');
+            $cbcID->nodeValue = $comprobante->serie_comprobante.'-'.$comprobante->num_comprobante;;
+            $summaryDocumentsLine->appendChild($cbcID);
+
+            $accountingCustomerParty =  $dom->createElement('cac:AccountingCustomerParty');
+            $summaryDocumentsLine->appendChild($accountingCustomerParty);
+
+            #VARIABLE
+            $customerAssignedAccountID = $dom->createElement('cbc:CustomerAssignedAccountID');
+            $customerAssignedAccountID->nodeValue = $comprobante->num_documento;
+            $accountingCustomerParty->appendChild($customerAssignedAccountID);
+
+            #VARIABLE
+            $additionalAccountID = $dom->createElement('cbc:AdditionalAccountID');
+            $additionalAccountID->nodeValue = '1';
+            $accountingCustomerParty->appendChild($additionalAccountID);
+
+            $status = $dom->createElement('cac:Status');
+            $summaryDocumentsLine->appendChild($status);
+
+            #VARIABLE
+            if($comprobante->estado =='0'){
+                $conditionCode = $dom->createElement('cbc:ConditionCode');
+                $conditionCode->nodeValue = '1';
+                $status->appendChild($conditionCode);
+            }
+            if($comprobante->estado =='4'){
+                $conditionCode = $dom->createElement('cbc:ConditionCode');
+                $conditionCode->nodeValue = '3';
+                $status->appendChild($conditionCode);
+            }
+
+            #VARIABLE
+            $totalAmount = $dom->createElement('sac:TotalAmount');
+            $nTotalAmount = $dom->createAttribute('currencyID');
+            $nTotalAmount->value = 'PEN';
+            $totalAmount->appendChild($nTotalAmount);
+            $totalAmount->nodeValue = number_format(round($comprobante->total_venta,2),2,'.','');
+            $summaryDocumentsLine->appendChild($totalAmount);
+
+            $billingPayment = $dom->createElement('sac:BillingPayment');
+            $summaryDocumentsLine->appendChild($billingPayment);
+
+            #VARIABLE
+            $paidAmount = $dom->createElement('cbc:PaidAmount');
+            $nPaidAmount = $dom->createAttribute('currencyID');
+            $nPaidAmount->value='PEN';
+            $paidAmount->appendChild($nPaidAmount);
+            $paidAmount->nodeValue = number_format(round($neto_item,2),2,'.','');
+            $billingPayment->appendChild($paidAmount);
+
+            #VARIABLE
+            $instructionID = $dom->createElement('cbc:InstructionID');
+            $instructionID->nodeValue = '01';
+            $billingPayment->appendChild($instructionID);
+
+            
+
+            // /////////////////////////////////
+            // $billingPayment = $dom->createElement('sac:BillingPayment');
+            // $summaryDocumentsLine->appendChild($billingPayment);
+
+            // $paidAmount = $dom->createElement('cbc:PaidAmount');
+            // $nPaidAmount = $dom->createAttribute('currencyID');
+            // $nPaidAmount->value='PEN';
+            // $paidAmount->appendChild($nPaidAmount);
+            // $paidAmount->nodeValue = 1.00;
+            // $billingPayment->appendChild($paidAmount);
+
+            // $instructionID = $dom->createElement('cbc:InstructionID');
+            // $instructionID->nodeValue = '02';
+            // $billingPayment->appendChild($instructionID);
+
+            // /////////////////////////////////
+            // $billingPayment = $dom->createElement('sac:BillingPayment');
+            // $summaryDocumentsLine->appendChild($billingPayment);
+
+            // $paidAmount = $dom->createElement('cbc:PaidAmount');
+            // $nPaidAmount = $dom->createAttribute('currencyID');
+            // $nPaidAmount->value='PEN';
+            // $paidAmount->appendChild($nPaidAmount);
+            // $paidAmount->nodeValue = 232.00;
+            // $billingPayment->appendChild($paidAmount);
+
+            // $instructionID = $dom->createElement('cbc:InstructionID');
+            // $instructionID->nodeValue = '03';
+            // $billingPayment->appendChild($instructionID);
+
+            // $allowanceCharge = $dom->createElement('cac:AllowanceCharge');
+            // $summaryDocumentsLine->appendChild($allowanceCharge);
+
+            // $chargeIndicator = $dom->createElement('cbc:ChargeIndicator');
+            // $chargeIndicator->nodeValue = 'true';
+            // $allowanceCharge->appendChild($chargeIndicator);
+
+            // $amount = $dom->createElement('cbc:Amount');
+            // $nAmount = $dom->createAttribute('currencyID');
+            // $nAmount->value = 'PEN';
+            // $amount->appendChild($nAmount); 
+            // $amount->nodeValue = '5.00';        
+            // $allowanceCharge->appendChild($amount);
+
+
+            $taxTotal = $dom->createElement('cac:TaxTotal');
+            $summaryDocumentsLine->appendChild($taxTotal);
+
+            #VARIABLE
+            $taxAmount = $dom->createElement('cbc:TaxAmount');
+            $nTaxAmount = $dom->createAttribute('currencyID');
+            $nTaxAmount->value='PEN';
+            $taxAmount->appendChild($nTaxAmount);
+            $taxAmount->nodeValue = number_format(round($impuesto,2),2,'.','');
+            $taxTotal->appendChild($taxAmount);
+
+            $taxSubtotal = $dom->createElement('cac:TaxSubtotal');
+            $taxTotal->appendChild($taxSubtotal);
+
+            #VARIABLE
+            $taxAmount = $dom->createElement('cbc:TaxAmount');
+            $nTaxAmount = $dom->createAttribute('currencyID');
+            $nTaxAmount->value='PEN';
+            $taxAmount->appendChild($nTaxAmount);
+            $taxAmount->nodeValue = number_format(round($impuesto,2),2,'.','');
+            $taxSubtotal->appendChild($taxAmount);
+
+            $taxCategory =$dom->createElement('cac:TaxCategory');
+            $taxSubtotal->appendChild($taxCategory);
+
+            $taxScheme = $dom->createElement('cac:TaxScheme');
+            $taxCategory->appendChild($taxScheme);
+
+            #VARIABLE
+            $cbcID = $dom->createElement('cbc:ID');
+            $cbcID->nodeValue = '1000';
+            $taxScheme->appendChild($cbcID);
+
+            #VARIABLE
+            $cbcName = $dom->createElement('cbc:Name');
+            $cbcName->nodeValue = 'IGV';
+            $taxScheme->appendChild($cbcName);
+
+            #VARIABLE
+            $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
+            $taxTypeCode->nodeValue = 'VAT';
+            $taxScheme->appendChild($taxTypeCode);
+
+
+            // $taxTotal = $dom->createElement('cac:TaxTotal');
+            // $summaryDocumentsLine->appendChild($taxTotal);
+
+            // $taxAmount = $dom->createElement('cbc:TaxAmount');
+            // $nTaxAmount = $dom->createAttribute('currencyID');
+            // $nTaxAmount->value='PEN';
+            // $taxAmount->appendChild($nTaxAmount);
+            // $taxAmount->nodeValue = '1200.00';
+            // $taxTotal->appendChild($taxAmount);
+
+            // $taxSubtotal = $dom->createElement('cac:TaxSubtotal');
+            // $taxTotal->appendChild($taxSubtotal);
+
+            // $taxAmount = $dom->createElement('cbc:TaxAmount');
+            // $nTaxAmount = $dom->createAttribute('currencyID');
+            // $nTaxAmount->value='PEN';
+            // $taxAmount->appendChild($nTaxAmount);
+            // $taxAmount->nodeValue = '1200.00';
+            // $taxSubtotal->appendChild($taxAmount);
+
+            // $taxCategory =$dom->createElement('cac:TaxCategory');
+            // $taxSubtotal->appendChild($taxCategory);
+
+            // $taxScheme = $dom->createElement('cac:TaxScheme');
+            // $taxCategory->appendChild($taxScheme);
+
+            // $cbcID = $dom->createElement('cbc:ID');
+            // $cbcID->nodeValue = '9999';
+            // $taxScheme->appendChild($cbcID);
+
+            // $cbcName = $dom->createElement('cbc:Name');
+            // $cbcName->nodeValue = 'OTROS';
+            // $taxScheme->appendChild($cbcName);
+
+            // $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
+            // $taxTypeCode->nodeValue = 'OTH';
+            // $taxScheme->appendChild($taxTypeCode);
+
+
+            //SEGUNDO DOCUMENTO
+
+            // $summaryDocumentsLine = $dom->createElement('sac:SummaryDocumentsLine');
+            // $summaryDocuments->appendChild($summaryDocumentsLine);
+
+            // $cbcLineID = $dom->createElement('cbc:LineID');
+            // $cbcLineID->nodeValue = '2';
+            // $summaryDocumentsLine->appendChild($cbcLineID);
+
+            // $documentTypeCode = $dom->createElement('cbc:DocumentTypeCode');
+            // $documentTypeCode->nodeValue = '03';
+            // $summaryDocumentsLine->appendChild($documentTypeCode);
+
+            // $cbcID = $dom->createElement('cbc:ID');
+            // $cbcID->nodeValue = 'B1A5-1101002';
+            // $summaryDocumentsLine->appendChild($cbcID);
+
+            // $accountingCustomerParty =  $dom->createElement('cac:AccountingCustomerParty');
+            // $summaryDocumentsLine->appendChild($accountingCustomerParty);
+
+            // $customerAssignedAccountID = $dom->createElement('cbc:CustomerAssignedAccountID');
+            // $customerAssignedAccountID->nodeValue = '10401308487';
+            // $accountingCustomerParty->appendChild($customerAssignedAccountID);
+
+            // $additionalAccountID = $dom->createElement('cbc:AdditionalAccountID');
+            // $additionalAccountID->nodeValue = '6';
+            // $accountingCustomerParty->appendChild($additionalAccountID);
+
+            // $status = $dom->createElement('cac:Status');
+            // $summaryDocumentsLine->appendChild($status);
+
+            // $conditionCode = $dom->createElement('cbc:ConditionCode');
+            // $conditionCode->nodeValue = '1';
+            // $status->appendChild($conditionCode);
+
+            // $totalAmount = $dom->createElement('sac:TotalAmount');
+            // $nTotalAmount = $dom->createAttribute('currencyID');
+            // $nTotalAmount->value = 'PEN';
+            // $totalAmount->appendChild($nTotalAmount);
+            // $totalAmount->nodeValue = '1044.00';
+            // $summaryDocumentsLine->appendChild($totalAmount);
+
+            // $billingPayment = $dom->createElement('sac:BillingPayment');
+            // $summaryDocumentsLine->appendChild($billingPayment);
+
+            // $paidAmount = $dom->createElement('cbc:PaidAmount');
+            // $nPaidAmount = $dom->createAttribute('currencyID');
+            // $nPaidAmount->value='PEN';
+            // $paidAmount->appendChild($nPaidAmount);
+            // $paidAmount->nodeValue = 800.00;
+            // $billingPayment->appendChild($paidAmount);
+
+            // $instructionID = $dom->createElement('cbc:InstructionID');
+            // $instructionID->nodeValue = '01';
+            // $billingPayment->appendChild($instructionID);
+
+            // /////////////////////////////////
+            // $billingPayment = $dom->createElement('sac:BillingPayment');
+            // $summaryDocumentsLine->appendChild($billingPayment);
+
+            // $paidAmount = $dom->createElement('cbc:PaidAmount');
+            // $nPaidAmount = $dom->createAttribute('currencyID');
+            // $nPaidAmount->value='PEN';
+            // $paidAmount->appendChild($nPaidAmount);
+            // $paidAmount->nodeValue = 100.00;
+            // $billingPayment->appendChild($paidAmount);
+
+            // $instructionID = $dom->createElement('cbc:InstructionID');
+            // $instructionID->nodeValue = '02';
+            // $billingPayment->appendChild($instructionID);
+
+            // /////////////////////////////////
+            // $billingPayment = $dom->createElement('sac:BillingPayment');
+            // $summaryDocumentsLine->appendChild($billingPayment);
+
+            // $paidAmount = $dom->createElement('cbc:PaidAmount');
+            // $nPaidAmount = $dom->createAttribute('currencyID');
+            // $nPaidAmount->value='PEN';
+            // $paidAmount->appendChild($nPaidAmount);
+            // $paidAmount->nodeValue = 1.00;
+            // $billingPayment->appendChild($paidAmount);
+
+            // $instructionID = $dom->createElement('cbc:InstructionID');
+            // $instructionID->nodeValue = '03';
+            // $billingPayment->appendChild($instructionID);
+
+            // $taxTotal = $dom->createElement('cac:TaxTotal');
+            // $summaryDocumentsLine->appendChild($taxTotal);
+
+            // $taxAmount = $dom->createElement('cbc:TaxAmount');
+            // $nTaxAmount = $dom->createAttribute('currencyID');
+            // $nTaxAmount->value='PEN';
+            // $taxAmount->appendChild($nTaxAmount);
+            // $taxAmount->nodeValue = '144.00';
+            // $taxTotal->appendChild($taxAmount);
+
+            // $taxSubtotal = $dom->createElement('cac:TaxSubtotal');
+            // $taxTotal->appendChild($taxSubtotal);
+
+            // $taxAmount = $dom->createElement('cbc:TaxAmount');
+            // $nTaxAmount = $dom->createAttribute('currencyID');
+            // $nTaxAmount->value='PEN';
+            // $taxAmount->appendChild($nTaxAmount);
+            // $taxAmount->nodeValue = '144.00';
+            // $taxSubtotal->appendChild($taxAmount);
+
+            // $taxCategory =$dom->createElement('cac:TaxCategory');
+            // $taxSubtotal->appendChild($taxCategory);
+
+            // $taxScheme = $dom->createElement('cac:TaxScheme');
+            // $taxCategory->appendChild($taxScheme);
+
+            // $cbcID = $dom->createElement('cbc:ID');
+            // $cbcID->nodeValue = '1000';
+            // $taxScheme->appendChild($cbcID);
+
+            // $cbcName = $dom->createElement('cbc:Name');
+            // $cbcName->nodeValue = 'IGV';
+            // $taxScheme->appendChild($cbcName);
+
+            // $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
+            // $taxTypeCode->nodeValue = 'VAT';
+            // $taxScheme->appendChild($taxTypeCode);
+
+
+            // //TERCER DOCUMENTO
+
+            // $summaryDocumentsLine = $dom->createElement('sac:SummaryDocumentsLine');
+            // $summaryDocuments->appendChild($summaryDocumentsLine);
+
+            // $cbcLineID = $dom->createElement('cbc:LineID');
+            // $cbcLineID->nodeValue = '3';
+            // $summaryDocumentsLine->appendChild($cbcLineID);
+
+            // $documentTypeCode = $dom->createElement('cbc:DocumentTypeCode');
+            // $documentTypeCode->nodeValue = '07';
+            // $summaryDocumentsLine->appendChild($documentTypeCode);
+
+            // $cbcID = $dom->createElement('cbc:ID');
+            // $cbcID->nodeValue = 'BC20-171872';
+            // $summaryDocumentsLine->appendChild($cbcID);
+
+            // $accountingCustomerParty =  $dom->createElement('cac:AccountingCustomerParty');
+            // $summaryDocumentsLine->appendChild($accountingCustomerParty);
+
+            // $customerAssignedAccountID = $dom->createElement('cbc:CustomerAssignedAccountID');
+            // $customerAssignedAccountID->nodeValue = '09728737';
+            // $accountingCustomerParty->appendChild($customerAssignedAccountID);
+
+            // $additionalAccountID = $dom->createElement('cbc:AdditionalAccountID');
+            // $additionalAccountID->nodeValue = '1';
+            // $accountingCustomerParty->appendChild($additionalAccountID);
+
+            // $billingReference = $dom->createElement('cac:BillingReference');
+            // $summaryDocumentsLine->appendChild($billingReference);
+
+            // $invoiceDocumentReference = $dom->createElement('cac:InvoiceDocumentReference');
+            // $billingReference->appendChild($invoiceDocumentReference);
+
+            // $cbcID = $dom->createElement('cbc:ID');
+            // $cbcID->nodeValue = 'B1A5-1100992';
+            // $invoiceDocumentReference->appendChild($cbcID);
+
+            // $documentTypeCode = $dom->createElement('cbc:DocumentTypeCode');
+            // $documentTypeCode->nodeValue='03';
+            // $invoiceDocumentReference->appendChild($documentTypeCode);
+
+            // $status = $dom->createElement('cac:Status');
+            // $summaryDocumentsLine->appendChild($status);
+
+            // $conditionCode = $dom->createElement('cbc:ConditionCode');
+            // $conditionCode->nodeValue='1';
+            // $status->appendChild($conditionCode);
+
+            // $totalAmount = $dom->createElement('sac:TotalAmount');
+            // $nTotalAmount = $dom->createAttribute('currencyID');
+            // $nTotalAmount->value='PEN';
+            // $totalAmount->appendChild($nTotalAmount);
+            // $totalAmount->nodeValue = '1416.00';
+            // $summaryDocumentsLine->appendChild($totalAmount);
+
+            // $billingPayment = $dom->createElement('sac:BillingPayment');
+            // $summaryDocumentsLine->appendChild($billingPayment);
+
+            // $paidAmount = $dom->createElement('cbc:PaidAmount');
+            // $nPaidAmount = $dom->createAttribute('currencyID');
+            // $nPaidAmount->value='PEN';
+            // $paidAmount->appendChild($nPaidAmount);
+            // $paidAmount->nodeValue = 1200.00;
+            // $billingPayment->appendChild($paidAmount);
+
+            // $instructionID = $dom->createElement('cbc:InstructionID');
+            // $instructionID->nodeValue = '01';
+            // $billingPayment->appendChild($instructionID);
+
+            // /////////////////////////////////
+            // $billingPayment = $dom->createElement('sac:BillingPayment');
+            // $summaryDocumentsLine->appendChild($billingPayment);
+
+            // $paidAmount = $dom->createElement('cbc:PaidAmount');
+            // $nPaidAmount = $dom->createAttribute('currencyID');
+            // $nPaidAmount->value='PEN';
+            // $paidAmount->appendChild($nPaidAmount);
+            // $paidAmount->nodeValue = 1.00;
+            // $billingPayment->appendChild($paidAmount);
+
+            // $instructionID = $dom->createElement('cbc:InstructionID');
+            // $instructionID->nodeValue = '02';
+            // $billingPayment->appendChild($instructionID);
+
+            // /////////////////////////////////
+            // $billingPayment = $dom->createElement('sac:BillingPayment');
+            // $summaryDocumentsLine->appendChild($billingPayment);
+
+            // $paidAmount = $dom->createElement('cbc:PaidAmount');
+            // $nPaidAmount = $dom->createAttribute('currencyID');
+            // $nPaidAmount->value='PEN';
+            // $paidAmount->appendChild($nPaidAmount);
+            // $paidAmount->nodeValue = 1.00;
+            // $billingPayment->appendChild($paidAmount);
+
+            // $instructionID = $dom->createElement('cbc:InstructionID');
+            // $instructionID->nodeValue = '03';
+            // $billingPayment->appendChild($instructionID);
+
+            // $taxTotal = $dom->createElement('cac:TaxTotal');
+            // $summaryDocumentsLine->appendChild($taxTotal);
+
+            // $taxAmount = $dom->createElement('cbc:TaxAmount');
+            // $nTaxAmount = $dom->createAttribute('currencyID');
+            // $nTaxAmount->value='PEN';
+            // $taxAmount->appendChild($nTaxAmount);
+            // $taxAmount->nodeValue = '216.00';
+            // $taxTotal->appendChild($taxAmount);
+
+            // $taxSubtotal = $dom->createElement('cac:TaxSubtotal');
+            // $taxTotal->appendChild($taxSubtotal);
+
+            // $taxAmount = $dom->createElement('cbc:TaxAmount');
+            // $nTaxAmount = $dom->createAttribute('currencyID');
+            // $nTaxAmount->value='PEN';
+            // $taxAmount->appendChild($nTaxAmount);
+            // $taxAmount->nodeValue = '216.00';
+            // $taxSubtotal->appendChild($taxAmount);
+
+            // $taxCategory =$dom->createElement('cac:TaxCategory');
+            // $taxSubtotal->appendChild($taxCategory);
+
+            // $taxScheme = $dom->createElement('cac:TaxScheme');
+            // $taxCategory->appendChild($taxScheme);
+
+            // $cbcID = $dom->createElement('cbc:ID');
+            // $cbcID->nodeValue = '1000';
+            // $taxScheme->appendChild($cbcID);
+
+            // $cbcName = $dom->createElement('cbc:Name');
+            // $cbcName->nodeValue = 'IGV';
+            // $taxScheme->appendChild($cbcName);
+
+            // $taxTypeCode = $dom->createElement('cbc:TaxTypeCode');
+            // $taxTypeCode->nodeValue = 'VAT';
+            // $taxScheme->appendChild($taxTypeCode);
+
+            $i++;
+        }
 
         
 
 
         // $xmlName = sprintf('%s-%s-%s', "Prueba", '01',1);
-        $xmlName = "20480072872-RC-20171218-900";
+        $xmlName = $empresa->ruc.'-RC-'.$numDate.'-'.$numero_comprobante;;
         $xmlPath = public_path().'\cdn/xml/'. $xmlName . '.XML';
         $xmlFullPath = $xmlPath;
         file_exists($xmlFullPath) ? unlink($xmlFullPath) : '';

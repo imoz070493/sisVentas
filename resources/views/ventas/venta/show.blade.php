@@ -10,7 +10,13 @@
 		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
 			<div class="form-group">
 				<label>Documento</label>
-				<p>{{$venta->tipo_comprobante}}</p>
+				<p>
+					@if($venta->tipo_comprobante=='01')
+						FACTURA ELECTRÓNICA
+					@elseif($venta->tipo_comprobante=='03')
+						BOLETA ELECTRÓNICA
+					@endif
+				</p>
 			</div>
 		</div>
 		<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">

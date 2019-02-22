@@ -16,6 +16,7 @@ class ArticuloController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permisoAlmacen');
     }
 
     public function index(Request $request)
@@ -29,8 +30,16 @@ class ArticuloController extends Controller
     			->where('a.nombre','LIKE','%'.$query.'%')
     			->orwhere('a.codigo','LIKE','%'.$query.'%')
     			->orderBy('idarticulo','desc')
+                // ->get();
+    			->paginate(10);
+
+            $permiso = DB::table('permiso')
+                ->where('idrol','=',\Auth::user()->idrol)
+                ->orderBy('idrol','desc')
                 ->get();
-    			// ->paginate(7);
+
+            $request->session()->put('permiso',$permiso);
+
     		return view('almacen.articulo.index',["articulos"=>$articulos,"searchText"=>$query]);
     	}
 

@@ -49,6 +49,13 @@ class Kernel extends HttpKernel
         'can' => \Illuminate\Foundation\Http\Middleware\Authorize::class,
         'guest' => \sisVentas\Http\Middleware\RedirectIfAuthenticated::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
-        'administrador' => \sisVentas\Http\Middleware\Administrador::class,
+
+        'permisoAlmacen' => \sisVentas\Http\Middleware\PermisoAlmacen::class,
+        'permisoCompras' => \sisVentas\Http\Middleware\PermisoCompras::class,
+        'permisoVentas' => \sisVentas\Http\Middleware\PermisoVentas::class,
+        'permisoAcceso' => \sisVentas\Http\Middleware\PermisoAcceso::class,
+        'permisoFE' => \sisVentas\Http\Middleware\PermisoFE::class,
+        'permisoConfiguracion' => \sisVentas\Http\Middleware\PermisoConfiguracion::class,
+
     ];
 }

@@ -16,6 +16,7 @@ class ProveedorController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permisoCompras');
     }
 
     public function index(Request $request)
@@ -30,6 +31,14 @@ class ProveedorController extends Controller
     			->where('tipo_persona','=','Proveedor')
     			->orderBy('idpersona','desc')
     			->paginate(7);
+
+            $permiso = DB::table('permiso')
+                ->where('idrol','=',\Auth::user()->idrol)
+                ->orderBy('idrol','desc')
+                ->get();
+
+            $request->session()->put('permiso',$permiso);
+
     		return view('compras.proveedor.index',["personas"=>$personas,"searchText"=>$query]);
     	}
 

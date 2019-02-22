@@ -5,6 +5,7 @@ namespace sisVentas\Http\Middleware;
 use Illuminate\Contracts\Auth\Guard;
 use Closure;
 use Session;
+use DB;
 
 class Administrador
 {
@@ -38,9 +39,18 @@ class Administrador
         //         break;
         // }
         // dd($this->auth->user()->idrol);
-        if($this->auth->user()->idrol=='1'){
-            return $next($request);    
-        }else{
+        $permiso = DB::table('permiso')
+                ->where('idrol','=',\Auth::user()->idrol)
+                ->where('codigo','=','2')
+                ->orderBy('idrol','desc')
+                ->first();
+        
+        if($permiso){
+            // dd('true');
+            return $next($request);
+        }
+        else{
+            // dd('false');
             return view('errors.inautorized');
         }
 
