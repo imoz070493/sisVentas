@@ -56,6 +56,7 @@ class Kernel extends HttpKernel
         'permisoAcceso' => \sisVentas\Http\Middleware\PermisoAcceso::class,
         'permisoFE' => \sisVentas\Http\Middleware\PermisoFE::class,
         'permisoConfiguracion' => \sisVentas\Http\Middleware\PermisoConfiguracion::class,
+        'permisoReportes' => \sisVentas\Http\Middleware\PermisoReportes::class,
 
     ];
 }

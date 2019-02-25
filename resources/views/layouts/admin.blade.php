@@ -66,7 +66,7 @@
               <!-- User Account: style can be found in dropdown.less -->
               <li class="dropdown user user-menu">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <small class="bg-red">Online  </small>
+                  <img src="{{ asset('/img/user-login.jpg') }}" class="user-image" alt="User Image">
                   <span class="hidden-xs">{{ Auth::user()->name }}</span>
                 </a>
                 <ul class="dropdown-menu">
@@ -169,6 +169,8 @@
                 <li><a href="{{url('ventas/resumenba')}}"><i class="fa fa-circle-o"></i> Resumen Bajas</a></li>
               </ul>
             </li>
+            @endif
+            @if($ven->codigo==6)
             <li class="treeview">
               <a href="#">
                 <i class="fa fa-bar-chart"></i> <span>Reportes</span>
@@ -180,7 +182,7 @@
               </ul>
             </li>
             @endif
-            @if($ven->codigo==6)
+            @if($ven->codigo==7)
             <li class="treeview">
               <a href="#">
                 <i class="fa fa-folder"></i> <span>Configuración</span>
@@ -191,7 +193,7 @@
               </ul>
             </li>
             @endif
-            @if($ven->codigo==7)
+            @if($ven->codigo==8)
             <li>
               <a href="#">
                 <i class="fa fa-plus-square"></i> <span>Ayuda</span>
@@ -199,7 +201,7 @@
               </a>
             </li>
             @endif
-            @if($ven->codigo==8)
+            @if($ven->codigo==9)
             <li>
               <a href="#">
                 <i class="fa fa-info-circle"></i> <span>Acerca De...</span>
@@ -220,6 +222,15 @@
        <!--Contenido-->
       <!-- Content Wrapper. Contains page content -->
       <div class="content-wrapper">
+
+        <section class="content-header">
+          <h1>
+            @yield('modulo')
+          </h1>
+          <ol class="breadcrumb">
+            @yield('ruta')
+          </ol>
+        </section>
         
         <!-- Main content -->
         <section class="content">
@@ -228,7 +239,7 @@
             <div class="col-md-12">
               <div class="box">
                 <div class="box-header with-border">
-                  <h3 class="box-title">Sistema de Ventas</h3>
+                  <h3 class="box-title">@yield('submodulo')</h3>
                   <div class="box-tools pull-right">
                     <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
                     
@@ -289,6 +300,20 @@
 
 
     <script type="text/javascript">
+
+      // Codigo para manternet abiertos el menu
+      var url = window.location;
+      // for sidebar menu but not for treeview submenu
+      $('ul.sidebar-menu a').filter(function() {
+          return this.href == url;
+      }).parent().siblings().removeClass('active').end().addClass('active');
+      // for treeview which is like a submenu
+      $('ul.treeview-menu a').filter(function() {
+          return this.href == url;
+      }).parentsUntil(".sidebar-menu > .treeview-menu").siblings().removeClass('active menu-open').end().addClass('active menu-open');
+
+
+
       $(function () {
         $('#example2').DataTable({
           'paging'      : true,

@@ -1,4 +1,10 @@
 @extends ('layouts.admin')
+@section('modulo')
+	Configuracion
+@endsection
+@section('submodulo')
+	Perfil
+@endsection
 @section('contenido')
 	<div class="row">
 		<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">

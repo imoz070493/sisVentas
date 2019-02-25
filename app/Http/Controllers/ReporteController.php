@@ -25,7 +25,7 @@ class ReporteController extends Controller
         $this->compras = '';
         $this->ventas = '';
         $this->middleware('auth');
-        // $this->middleware('permisoAlmacen');
+        $this->middleware('permisoReportes');
     }
 
     public function index(Request $request)

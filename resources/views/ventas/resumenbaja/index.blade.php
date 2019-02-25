@@ -1,4 +1,15 @@
 @extends ('layouts.admin')
+@section('modulo')
+	Facturacion Electronica
+@endsection
+@section('ruta')
+	<li><a href="#"><i class="fa fa-dashboard"></i> Facturacion Electronica</a></li>
+    <li class="">Resumen de Bajas</li>
+    <li class="Active">Listado</li>
+@endsection
+@section('submodulo')
+	Resumen de Bajas
+@endsection
 @section('contenido')
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">

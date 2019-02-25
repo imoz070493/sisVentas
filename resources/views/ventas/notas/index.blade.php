@@ -1,8 +1,19 @@
 @extends ('layouts.admin')
+@section('modulo')
+	Ventas
+@endsection
+@section('ruta')
+	<li><a href="#"><i class="fa fa-dashboard"></i> Ventas</a></li>
+    <li class="">Notas</li>
+    <li class="Active">Listado</li>
+@endsection
+@section('submodulo')
+	Notas de Credito / Debito
+@endsection
 @section('contenido')
 <div class="row">
 	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-		<h3>Notas Credito/Debito <a href="notas/create"><button class="btn btn-success">Nuevo</button></a> </h3>
+		<h3>Lista de Notas Credito/Debito <a href="notas/create"><button class="btn btn-success">Nuevo</button></a> </h3>
 		@include('ventas.venta.search')
 	</div>
 </div>

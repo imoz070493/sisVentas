@@ -1,4 +1,16 @@
 @extends ('layouts.admin')
+@section('modulo')
+	Almacén
+@endsection
+@section('ruta')
+	<li><a href="#"><i class="fa fa-dashboard"></i> Almacen</a></li>
+    <li class="">Marca</li>
+    <li class="Active">Listado</li>
+@endsection
+@section('submodulo')
+	Marca
+@endsection
+@section('contenido')
 @section('contenido')
 <div class="row">
 	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
