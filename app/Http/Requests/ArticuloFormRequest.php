@@ -27,7 +27,7 @@ class ArticuloFormRequest extends Request
             'idcategoria' => 'required',
             'codigo' => 'required|max:50',
             'nombre' => 'required|max:100',
-            'stock' => 'required|numeric',
+            // 'stock' => 'required|numeric',
             'descripcion' => 'max:512',
             'imagen' => 'mimes:jpeg,bmp,png'
         ];

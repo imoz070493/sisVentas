@@ -72,8 +72,8 @@
             </div>
 			<div class="form-group">
 				<button class="btn btn-primary" type="submit">Guardar</button>
-				<button class="btn btn-danger" type="reset">Cancelar</button>
-                <a class="btn btn-info" href="{{ asset('seguridad/usuario') }}">Regresar</a>
+				<button class="btn btn-info" type="reset">Limpiar</button>
+                <a class="btn btn-danger" href="{{ asset('seguridad/usuario') }}">Cancelar</a>
 			</div>
 			{!!Form::close()!!}
 		</div>

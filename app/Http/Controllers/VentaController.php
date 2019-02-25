@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Input;
 use sisVentas\Http\Requests\VentaFormRequest;
 use sisVentas\Venta;
+use sisVentas\Persona;
 use sisVentas\Permiso;
 use sisVentas\DetalleVenta;
 use DB;
@@ -24,10 +25,14 @@ use Illuminate\Support\Collection;
 
 class VentaController extends Controller
 {
+
+    protected $documento;
+
     public function __construct()
     {
     	$this->middleware('auth');
         $this->middleware('permisoVentas');
+        $this->documento = '';
     }
 
     public function index(Request $request)
@@ -71,6 +76,10 @@ class VentaController extends Controller
 
     public function create()
     {
+        if(\Session::has('venta') && \Session::get('venta')=='1'){
+            \Session::forget('venta');
+        }
+
     	$personas = DB::table('persona')->where('tipo_persona','=','Cliente')->get();
     	$articulos = DB::table('articulo as art')
     		->join('detalle_ingreso as di','art.idarticulo','=','di.idarticulo')
@@ -209,6 +218,7 @@ class VentaController extends Controller
 
             if($responseCdr['code']=='0'){
                 $estado = '2';
+                \Session::put('msgB','LA FACTURA FUE ENVIADA CORRECTAMENTE');
             }else{
                 $estado = '1';
             }
@@ -260,10 +270,12 @@ class VentaController extends Controller
     public function peticion(Request $request){
         $tipo_comprobante = $_POST['tipoComprobante'];
         if($tipo_comprobante=='01'){
-            $serie = "F001";    
+            $serie = "F001";   
+            $tipo_documento = "02";
         }
         if($tipo_comprobante=='03'){
             $serie = "B001";    
+            $tipo_documento = "01";
         }        
 
         $ventas = DB::table('venta')
@@ -272,6 +284,13 @@ class VentaController extends Controller
                 ->where('tipo_comprobante','=',$tipo_comprobante)
                 ->orderBy('idventa','desc')
                 ->first();
+        $clientes = DB::table('persona')
+                ->select('idpersona','nombre')
+                ->where('tipo_persona','=','Cliente')
+                ->where('tipo_documento','=',$tipo_documento)
+                ->orderBy('nombre','asc')
+                ->get();
+        // dd($clientes);
         if(is_null($ventas)){
             $num_comprobante=0;
         }else{
@@ -280,6 +299,7 @@ class VentaController extends Controller
         return response()->json([
             'serie' => $serie,
             'correlativo' => str_pad($num_comprobante + 1,  8, "0", STR_PAD_LEFT),
+            'clientes' => $clientes,
             // 'ventas'=>$ventas
         ]);
     }
@@ -397,5 +417,47 @@ class VentaController extends Controller
         
 
         // return Redirect::to('ventas/venta');
+    }
+
+
+    public function enviarCorreo(){
+
+        $tipo_comprobante = $_GET['tc'];
+        $serie = $_GET['s'];
+        $correlativo = $_GET['c'];
+        $destinatario = "mychy_7@hotmail.com";
+
+        $empresa = DB::table('config')
+            ->where('estado','=','1')
+            ->first();
+
+        $this->documento = array(
+            'documento' => $empresa->ruc."-".$tipo_comprobante."-".$serie."-".$correlativo,
+            'empresa' => $empresa,
+            'destinatario' => $destinatario,
+        );
+
+        $data = array(
+            'name' => "Curso Laraveldsadasdasd",
+        );
+        \Mail::send('ventas.venta.prueba',$data,function($message){
+            $objetoEmpresa = $this->documento['empresa'];
+            $message->from('imoz070493@gmail.com',$objetoEmpresa->razon_social);
+            $message->to($this->documento['destinatario'])->subject('DOCUMENTOS ELECTRONICOS '.$this->documento['documento']);
+
+            $pdf = public_path()."\cdn/pdf/".$this->documento['documento'].".pdf";
+            $xml = public_path()."\cdn/document/prueba21/".$this->documento['documento'].".ZIP";
+            $cdr = public_path()."\cdn/cdr/R-".$this->documento['documento'].".ZIP";
+            chmod($xml,0777);
+            chmod($cdr,0777);
+            $message->attach($pdf);
+            $message->attach($xml);
+            $message->attach($cdr);
+        });
+
+        \Session::put('msgB','Correo Enviado Satisfactoriamente');
+
+        return Redirect::back();
+        // return "Tu email ha sido enviado satisfactoriamente";
     }
 }

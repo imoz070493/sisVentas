@@ -51,7 +51,7 @@
 								<td>{{$det->cantidad}}</td>
 								<td>{{$det->precio_venta}}</td>
 								<td>{{$det->descuento}}</td>								
-								<td>{{$det->cantidad*$det->precio_venta-$det->descuento}}</td>
+								<td>{{number_format($det->cantidad*$det->precio_venta-$det->descuento, 2)}}</td>
 							</tr>
 							@endforeach
 						</tbody>

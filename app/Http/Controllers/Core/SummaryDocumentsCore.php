@@ -480,12 +480,7 @@ class SummaryDocumentsCore
 
         #VARIABLE
         $cbcID = $dom->createElement('cbc:ID');
-        if($comprobante->estado =='0'){
-            $cbcID->nodeValue = $empresa->ruc;
-        }
-        if($comprobante->estado =='4'){
-            $cbcID->nodeValue = 'RC-'.$numDate.'-'.$numero_comprobante;
-        }
+        $cbcID->nodeValue = $empresa->ruc;
         $signature->appendChild($cbcID);
 
         $signatoryParty = $dom->createElement('cac:SignatoryParty');
@@ -515,12 +510,7 @@ class SummaryDocumentsCore
 
         #VARIABLE
         $cbcURI = $dom->createElement('cbc:URI');
-        if($comprobante->estado =='0'){
-            $cbcURI->nodeValue = $empresa->ruc;
-        }
-        if($comprobante->estado =='4'){
-            $cbcURI->nodeValue = 'RC-'.$numDate.'-'.$numero_comprobante;
-        }
+        $cbcURI->nodeValue = $empresa->ruc;
         $externalReference->appendChild($cbcURI);
 
 

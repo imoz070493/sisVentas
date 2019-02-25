@@ -24,9 +24,9 @@
 					<td>{{$cat->descripcion}}</td>
 					<td>
 						<a href="{{URL::action('CategoriaController@edit',$cat->idcategoria)}}">
-							<button class="btn btn-info">Editar</button>
+							<button class="btn btn-info" title="Editar"><i class="fa fa-edit"></i></button>
 						</a>
-						<a href="" data-target="#modal-delete-{{$cat->idcategoria}}" data-toggle="modal"><button class="btn btn-danger">Eliminar</button></a>
+						<a href="" data-target="#modal-delete-{{$cat->idcategoria}}" data-toggle="modal"><button class="btn btn-danger" title="Eliminar"><i class="fa fa-close"></i></button></a>
 					</td>
 				</tr>
 				@include('almacen.categoria.modal')

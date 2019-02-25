@@ -24,9 +24,9 @@
 					<td>{{$mar->descripcion}}</td>
 					<td>
 						<a href="{{URL::action('MarcaController@edit',$mar->idmarca)}}">
-							<button class="btn btn-info">Editar</button>
+							<button class="btn btn-info" title="Editar"><i class="fa fa-edit"></i></button>
 						</a>
-						<a href="" data-target="#modal-delete-{{$mar->idmarca}}" data-toggle="modal"><button class="btn btn-danger">Eliminar</button></a>
+						<a href="" data-target="#modal-delete-{{$mar->idmarca}}" data-toggle="modal"><button class="btn btn-danger" title="Eliminar"><i class="fa fa-close"></i></button></a>
 					</td>
 				</tr>
 				@include('almacen.marca.modal')

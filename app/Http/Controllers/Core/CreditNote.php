@@ -1903,7 +1903,7 @@ class CreditNote
         $pdf->MultiCell(30, 4, '0.00', 1, 'R');
         $pdf->SetXY($x + 30, $y);
         $x = $pdf->GetX();
-        $pdf->MultiCell(30, 4, '0.00', 1, 'R');
+        $pdf->MultiCell(30, 4, number_format(round($neto,2),2,'.',''), 1, 'R');
         $pdf->SetXY($x + 30, $y);
         $x = $pdf->GetX();
         $pdf->MultiCell(30, 4, '', 1, 'R');
@@ -1912,10 +1912,10 @@ class CreditNote
         $pdf->MultiCell(20, 4, '', 1, 'R');
         $pdf->SetXY($x + 20, $y);
         $x = $pdf->GetX();
-        $pdf->MultiCell(20, 4, round($igv,2), 1, 'R');
+        $pdf->MultiCell(20, 4, number_format(round($igv,2),2,'.',''), 1, 'R');
         $pdf->SetXY($x + 20, $y);
         $x = $pdf->GetX();
-        $pdf->MultiCell(40, 4, round($total,2), 1, 'R');
+        $pdf->MultiCell(40, 4, number_format(round($total,2),2,'.',''), 1, 'R');
 
         $pdf->Ln(1.5);
         $y = $pdf->GetY();

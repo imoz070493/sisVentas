@@ -17,7 +17,7 @@
 					<th>Codigo</th>
 					<th>Categoria</th>
 					<th>Stock</th>
-					<th>Imagen</th>
+					<!-- <th>Imagen</th> -->
 					<th>Estado</th>
 					<th>Opciones</th>
 				</thead>
@@ -28,15 +28,15 @@
 					<td>{{$art->codigo}}</td>
 					<td>{{$art->categoria}}</td>
 					<td>{{$art->stock}}</td>
-					<td>
+					<!-- <td>
 						<img src="{{asset('imagenes/articulos/'.$art->imagen)}}" alt="{{$art->nombre}}" height="100px" width="100px" class="img-thumbnail">
-					</td>
+					</td> -->
 					<td>{{$art->estado}}</td>
 					<td>
 						<a href="{{URL::action('ArticuloController@edit',$art->idarticulo)}}">
-							<button class="btn btn-info">Editar</button>
+							<button class="btn btn-info" title="Editar"><i class="fa fa-edit"></i></button>
 						</a>
-						<a href="" data-target="#modal-delete-{{$art->idarticulo}}" data-toggle="modal"><button class="btn btn-danger">Eliminar</button></a>
+						<a href="" data-target="#modal-delete-{{$art->idarticulo}}" data-toggle="modal"><button class="btn btn-danger" title="Eliminar"><i class="fa fa-close"></i></button></a>
 					</td>
 				</tr>
 				@include('almacen.articulo.modal')

@@ -35,6 +35,14 @@ Route::post('resumenbaja/enviar', 'ResumenBajaController@enviar');
 
 Route::post('venta/reenviar', 'VentaController@reenviar');
 
+Route::get('reporte/xls-compras', 'ReporteController@exportarExcelCompras');
+
+Route::get('reporte/xls-ventas', 'ReporteController@exportarExcelVentas');
+
+Route::resource('reporte/compras', 'ReporteController@obtenerCompras');
+
+Route::resource('reporte/ventas', 'ReporteController@obtenerVentas');
+
 Route::resource('venta/pdf', 'VentaController@crearPDF');
 
 Route::resource('almacen/articulo','ArticuloController');
@@ -63,7 +71,7 @@ Route::get('/export-users-excel','ExcelController@exportUsersExcel');
 
 Route::get('/export-users-pdf','ExcelController@exportUsersPdf');
 
-Route::get('/enviar-correo','ExcelController@enviarCorreo');
+Route::get('/enviar-correo','VentaController@enviarCorreo');
 
 Route::get('/leerfirma','VentaController@leerfirma');
 

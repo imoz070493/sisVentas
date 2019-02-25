@@ -71,6 +71,7 @@ class IngresoController extends Controller
     			$ingreso->tipo_comprobante = $request->get('tipo_comprobante');
     			$ingreso->serie_comprobante = $request->get('serie_comprobante');
     			$ingreso->num_comprobante = $request->get('num_comprobante');
+                $ingreso->total_compra = $request->get('total_compra');
     			$mytime = Carbon::now('America/Lima');
     			$ingreso->fecha_hora = $mytime->toDateTimeString();
     			$ingreso->impuesto = '18';

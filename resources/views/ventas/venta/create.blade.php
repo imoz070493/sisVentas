@@ -2,7 +2,8 @@
 @section('contenido')
 	<div class="row">
 		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-			<h3>Nuevo Venta</h3>
+			<h3>Nuevo Venta <a href="{{asset('ventas/cliente/create')}}?v=1"><button class="btn btn-success"><i class="fa fa-plus-square"></i> Agregar Cliente</button></a></h3>
+			
 			@if(count($errors)>0)
 			<div class="alert alert-danger">
 				<ul>
@@ -66,9 +67,9 @@
 			<div class="form-group">
 				<label for="proveedor">Cliente</label>
 				<select name="idcliente" id="idcliente" class="form-control selectpicker" data-live-search="true">
-					@foreach($personas as $persona)
+					<!-- @foreach($personas as $persona)
 						<option value="{{$persona->idpersona}}">{{$persona->nombre}}</option>
-					@endforeach
+					@endforeach -->
 				</select>
 			</div>
 		</div>
@@ -158,12 +159,12 @@
 			<div class="form-group">
 				<input type="hidden" id="_token" name="_token" value="{{ csrf_token()}}"></input>
 				<button class="btn btn-primary" type="submit">Guardar</button>
-				<button class="btn btn-danger" type="reset">Cancelar</button>
+				<button class="btn btn-info" type="reset">Limpiar</button>
 			</div>
 		</div>
 		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
 			<div class="form-group text-right">
-				<a class="btn btn-info" href="{{ asset('ventas/venta') }}">Regresar</a>
+				<a class="btn btn-danger" href="{{ asset('ventas/venta') }}">Cancelar</a>
 			</div>
 		</div>
 	</div>
@@ -183,6 +184,7 @@
 		$('#fecha').datepicker({
 		  autoclose: true,
 		});
+		mostrarValores();
 	});
 
 	var cont = 0;
@@ -214,6 +216,17 @@
             success: function (datos) {
                $("#serie_comprobante").val(datos['serie']);
                $("#num_comprobante").val(datos['correlativo']);
+               clientes = datos['clientes']
+               $('#idcliente').empty();
+               clientes.forEach(function(element){
+               		console.log(element.idpersona)
+               		console.log(element.nombre)
+               	
+				$('#idcliente').append($('<option>', {value: element.idpersona, text: element.nombre}));
+               })
+               $('.selectpicker').selectpicker('refresh');
+
+
                // console.log(datos)
             },
             error: function (data) {
@@ -242,11 +255,11 @@
 			if(parseInt(stock) >= parseInt(cantidad)){
 				subtotal[cont] = (cantidad*precio_venta - descuento);
 				total = total + subtotal[cont];
-				var fila = '<tr class="selected" id="fila'+cont+'"><td><button type="button" class="btn btn-warning" onclick="eliminar('+cont+');">X</button></td><td><input type="hidden" name="idarticulo[]" value="'+idarticulo+'">'+articulo+'</td><td><input type="number" name="cantidad[]" value="'+cantidad+'"></td><td><input type="number" name="precio_venta[]" value="'+precio_venta+'"></td><td><input type="number" name="descuento[]" value="'+descuento+'"></td><td>'+subtotal[cont]+'</td></tr>';
+				var fila = '<tr class="selected" id="fila'+cont+'"><td><button type="button" class="btn btn-warning" onclick="eliminar('+cont+');">X</button></td><td><input type="hidden" name="idarticulo[]" value="'+idarticulo+'">'+articulo+'</td><td><input type="number" name="cantidad[]" value="'+cantidad+'"></td><td><input type="number" name="precio_venta[]" value="'+precio_venta+'"></td><td><input type="number" name="descuento[]" value="'+descuento+'"></td><td>'+subtotal[cont].toFixed(2)+'</td></tr>';
 				cont++;
 				limpiar();
 
-				$("#total").html("S/. "+total);
+				$("#total").html("S/. "+total.toFixed(2));
 
 				$("#total_venta").val(total);
 
@@ -278,6 +291,7 @@
 	function eliminar(index){
 		total = total -subtotal[index];
 		$("#total").html("S/."+total);
+		$("#total_venta").val(total);
 		$("#fila"+index).remove();
 		evaluar();
 	}

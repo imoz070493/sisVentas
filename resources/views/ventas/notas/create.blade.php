@@ -123,12 +123,12 @@
 			<div class="form-group">
 				<input type="hidden" id="_token" name="_token" value="{{ csrf_token()}}"></input>
 				<button class="btn btn-primary" type="submit">Guardar</button>
-				<button class="btn btn-danger" type="reset">Cancelar</button>
+				<button class="btn btn-info" type="reset">Limpiar</button>
 			</div>
 		</div>
 		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
 			<div class="form-group text-right">
-				<a class="btn btn-info" href="{{ asset('ventas/notas') }}">Regresar</a>
+				<a class="btn btn-danger" href="{{ asset('ventas/notas') }}">Cancelar</a>
 			</div>
 		</div>
 	</div>
@@ -292,11 +292,11 @@
 				for(i in datos.detalle){
 					subtotal[cont] = (datos.detalle[i].cantidad*datos.detalle[i].precio_venta - datos.detalle[i].descuento);
 					total = total + subtotal[cont];
-					var fila = '<tr class="selected" id="fila'+cont+'"><td>'+(cont+1)+'</td><td><input type="hidden" name="idarticulo[]" value="'+datos.detalle[i].idarticulo+'"" >'+datos.detalle[i].nombre+'</td><td><input type="number" id="cantidad'+cont+'" name="cantidad[]" value="'+datos.detalle[i].cantidad+'" onblur="calcular('+cont+')" ></td><td><input type="number" id="precio_venta'+cont+'" name="precio_venta[]" value="'+datos.detalle[i].precio_venta+'" onblur="calcular('+cont+')"></td><td><input type="number" id="descuento'+cont+'"name="descuento[]" value="'+datos.detalle[i].descuento+'" onblur="calcular('+cont+')"></td><td><label id="subtotal'+cont+'">'+subtotal[cont]+'</label></td></tr>';
+					var fila = '<tr class="selected" id="fila'+cont+'"><td>'+(cont+1)+'</td><td><input type="hidden" name="idarticulo[]" value="'+datos.detalle[i].idarticulo+'"" >'+datos.detalle[i].nombre+'</td><td><input type="number" id="cantidad'+cont+'" name="cantidad[]" value="'+datos.detalle[i].cantidad+'" onblur="calcular('+cont+')" ></td><td><input type="number" id="precio_venta'+cont+'" name="precio_venta[]" value="'+datos.detalle[i].precio_venta+'" onblur="calcular('+cont+')"></td><td><input type="number" id="descuento'+cont+'"name="descuento[]" value="'+datos.detalle[i].descuento+'" onblur="calcular('+cont+')"></td><td><label id="subtotal'+cont+'">'+subtotal[cont].toFixed(2)+'</label></td></tr>';
 					cont++;
 					// limpiar();
 
-					$("#total").html("S/. "+total);
+					$("#total").html("S/. "+parseFloat(total).toFixed(2));
 
 					$("#total_venta").val(total);
 

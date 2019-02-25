@@ -28,16 +28,16 @@
 					<td>{{$ven->impuesto}}</td>
 					<td>{{$ven->total_venta}}</td>
 					<td>@if($ven->response_code=='0')
-								<a class="btn btn-success btn-xs">Aceptado</a>	
+								<a class="btn btn-success btn-xs">&nbsp;&nbsp;Aceptado&nbsp;&nbsp;</a>	
 							@else
 								<a class="btn btn-danger btn-xs">Rechazado</a>
 							@endif</td>
 					<td>
 						<a href="{{URL::action('NotasController@show',$ven->idventa)}}">
-							<button class="btn btn-primary">Detalles</button>
+							<button class="btn btn-primary" title="Detalles"><i class="fa fa-list"></i></button>
 						</a>
 						<!-- <a href="" data-target="#modal-delete-{{$ven->idventa}}" data-toggle="modal"><button class="btn btn-danger">Anular</button></a> -->
-						<a href="{{ asset('cdn/pdf/'.$ruc.'-'.$ven->tipo_comprobante.'-'.$ven->serie_comprobante.'-'.$ven->num_comprobante.'.pdf') }}" target="_blank"><button class="btn btn-danger">PDF</button></a>
+						<a href="{{ asset('cdn/pdf/'.$ruc.'-'.$ven->tipo_comprobante.'-'.$ven->serie_comprobante.'-'.$ven->num_comprobante.'.pdf') }}" target="_blank"><button class="btn btn-danger" title="PDF"><i class="fa fa-file-pdf-o"></i></button></a>
 
 					</td>
 				</tr>

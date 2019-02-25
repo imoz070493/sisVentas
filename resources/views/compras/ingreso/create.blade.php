@@ -126,9 +126,15 @@
 		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12" id="guardar">
 			<div class="form-group">
 				<input type="hidden" name="_token" value="{{ csrf_token()}}"></input>
+				<input type="hidden" id="total_compra" name="total_compra"></input>
 				<button class="btn btn-primary" type="submit">Guardar</button>
-				<button class="btn btn-danger" type="reset">Cancelar</button>
-				<a class="btn btn-info" href="{{ asset('compras/ingreso') }}">Regresar</a>
+				<button class="btn btn-info" type="reset">Limpiar</button>
+			</div>
+		</div>
+
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+			<div class="form-group text-right">
+				<a class="btn btn-danger" href="{{ asset('compras/ingreso') }}">Cancelar</a>
 			</div>
 		</div>
 	</div>
@@ -165,6 +171,7 @@
 
 			$("#total").html("S/."+total);
 
+			$("#total_compra").val(total);
 
 			evaluar();
 
@@ -191,6 +198,7 @@
 	function eliminar(index){
 		total = total -subtotal[index];
 		$("#total").html("S/."+total);
+		$("#total_compra").val(total);
 		$("#fila"+index).remove();
 		evaluar();
 	}

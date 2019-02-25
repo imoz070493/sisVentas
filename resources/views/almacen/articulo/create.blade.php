@@ -2,7 +2,7 @@
 @section('contenido')
 	<div class="row">
 		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-			<h3>Nuevo Articulo</h3>
+			<h3>Articulo Nuevo</h3>
 			@if(count($errors)>0)
 			<div class="alert alert-danger">
 				<ul>
@@ -50,18 +50,22 @@
 				<input type="text" name="codigo" required value="{{old('codigo')}}" class="form-control" placeholder="Codigo del Articulo...">
 			</div>
 		</div>
-		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
+		<!-- <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
 			<div class="form-group">
 				<label for="nombre">Stock</label>
 				<input type="text" name="stock" required value="{{old('stock')}}" class="form-control" placeholder="Stock...">
 			</div>
-		</div>
-		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
+		</div> -->
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
 			<div class="form-group">
 				<label>Und. Medida</label>
 				<select name="idunidad" class="form-control">
 					@foreach($unidades as $und)
-						<option value="{{$und->idunidad_medida}}">{{$und->titulo}}</option>
+						@if($und->idunidad_medida=='19')
+							<option value="{{$und->idunidad_medida}}" selected>{{$und->titulo}}</option>
+						@else
+							<option value="{{$und->idunidad_medida}}">{{$und->titulo}}</option>
+						@endif
 					@endforeach
 				</select>
 			</div>
@@ -81,8 +85,8 @@
 		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
 			<div class="form-group">
 				<button class="btn btn-primary" type="submit">Guardar</button>
-				<button class="btn btn-danger" type="reset">Limpiar</button>
-				<a class="btn btn-info" href="{{ asset('almacen/articulo') }}">Regresar</a>
+				<button class="btn btn-info" type="reset">Limpiar</button>
+				<a class="btn btn-danger" href="{{ asset('almacen/articulo') }}">Cancelar</a>
 			</div>
 		</div>
 	</div>

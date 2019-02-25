@@ -44,6 +44,9 @@ class ClienteController extends Controller
 
     public function create()
     {
+        if(isset($_GET['v'])){
+            \Session::put('venta','1');
+        }
     	return view("ventas.cliente.create");
     }
 
@@ -58,7 +61,15 @@ class ClienteController extends Controller
     	$persona->telefono = $request->get('telefono');
     	$persona->email = $request->get('email');
     	$persona->save();
-    	return Redirect::to('ventas/cliente');
+        if(\Session::has('venta') && \Session::get('venta')=='1'){
+            \Session::forget('venta');
+            return Redirect::to('ventas/venta/create');    
+        }else{
+            return Redirect::to('ventas/cliente');            
+        }
+        
+
+        // return Redirect::back();
     }
 
     public function show($id)

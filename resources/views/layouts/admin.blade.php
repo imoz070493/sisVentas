@@ -169,6 +169,16 @@
                 <li><a href="{{url('ventas/resumenba')}}"><i class="fa fa-circle-o"></i> Resumen Bajas</a></li>
               </ul>
             </li>
+            <li class="treeview">
+              <a href="#">
+                <i class="fa fa-bar-chart"></i> <span>Reportes</span>
+                <i class="fa fa-angle-left pull-right"></i>
+              </a>
+              <ul class="treeview-menu">
+                <li><a href="{{url('reporte/compras')}}"><i class="fa fa-circle-o"></i> Compras</a></li>
+                <li><a href="{{url('reporte/ventas')}}"><i class="fa fa-circle-o"></i> Ventas</a></li>
+              </ul>
+            </li>
             @endif
             @if($ven->codigo==6)
             <li class="treeview">
@@ -249,7 +259,7 @@
         <div class="pull-right hidden-xs">
           <b>Version</b> 2.3.0
         </div>
-        <strong>Copyright &copy; 2015-2020 <a href="www.incanatoit.com">IncanatoIT</a>.</strong> All rights reserved.
+        <strong>Copyright &copy; 2015-2020 <a href="http://www.perusi.pe">Peru SI</a>.</strong> All rights reserved.
       </footer>
 
       
@@ -266,6 +276,17 @@
     <!-- DataTables -->
     <script src="{{asset('js/jquery.dataTables.min.js')}}"></script>
     <script src="{{asset('js/dataTables.bootstrap.min.js')}}"></script>
+
+
+    
+
+
+
+
+
+
+
+
 
     <script type="text/javascript">
       $(function () {
@@ -286,12 +307,29 @@
           'info'        : true,
           'autoWidth'   : false
         })
+        
+
+        
         // $('#example2').DataTable()
       })
       $(document).ready(function(){
         $('#fecha').datepicker({
             autoclose: true,
             format: 'yyyy/mm/dd',
+        })
+        $('#fecha_inicio').datepicker({
+            autoclose: true,
+            format: 'yyyy/mm/dd',
+        })
+        $('#fecha_fin').datepicker({
+            autoclose: true,
+            format: 'yyyy/mm/dd',
+        })
+        $('#reporteCompras').DataTable({
+          dom: 'Bfrtip',
+          buttons: [
+              'copy', 'csv', 'excel', 'pdf', 'print'
+          ]  
         })
       });
 

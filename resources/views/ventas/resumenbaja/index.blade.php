@@ -33,7 +33,7 @@
 					<td>{{$res->serie}}-{{$res->numero}}</td>
 					<td>
 						@if($res->estado=='6')
-							<a class="btn btn-success btn-xs">Aceptado</a>
+							<a class="btn btn-success btn-xs">&nbsp;&nbsp;Aceptado&nbsp;&nbsp;</a>
 						@else
 							<a class="btn btn-danger btn-xs">Rechazado</a>
 						@endif

@@ -24,9 +24,9 @@
 					<td>{{$usu->email}}</td>
 					<td>
 						<a href="{{URL::action('UsuarioController@edit',$usu->id)}}">
-							<button class="btn btn-info">Editar</button>
+							<button class="btn btn-info" title="Editar"><i class="fa fa-edit"></i></button>
 						</a>
-						<a href="" data-target="#modal-delete-{{$usu->id}}" data-toggle="modal"><button class="btn btn-danger">Eliminar</button></a>
+						<a href="" data-target="#modal-delete-{{$usu->id}}" data-toggle="modal"><button class="btn btn-danger" title="Eliminar"><i class="fa fa-close"></i></button></a>
 					</td>
 				</tr>
 				@include('seguridad.usuario.modal')

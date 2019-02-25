@@ -40,7 +40,7 @@
 					</td>
 					<td>
 						<a href="{{URL::action('ConfiguracionController@edit',$per->id)}}">
-							<button class="btn btn-info">Editar</button>
+							<button class="btn btn-info" title="Editar"><i class="fa fa-edit"></i></button>
 						</a>
 					</td>
 				</tr>

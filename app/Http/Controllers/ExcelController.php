@@ -4,6 +4,7 @@ namespace sisVentas\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\Log;
 use sisVentas\Http\Requests;
 
 use sisVentas\User;
@@ -15,11 +16,19 @@ class ExcelController extends Controller
 
     public function enviarCorreo(){
     	$data = array(
-    		'name' => "Curso Laravel",
+    		'name' => "Curso Laraveldsadasdasd",
     	);
     	\Mail::send('ventas.venta.prueba',$data,function($message){
     		$message->from('imoz070493@gmail.com','Curso Laravel');
     		$message->to('mychy_7@hotmail.com')->subject('Test email Curso Laravel');
+
+    		$xml = "C:/xampp1/htdocs/sisVentas/public/cdn/document/prueba21/20100066603-01-F001-00000190.ZIP";
+    		$cdr = "C:/xampp1/htdocs/sisVentas/public/cdn/cdr/R-20100066603-01-F001-00000190.ZIP";
+    		chmod($xml,0777);
+    		chmod($cdr,0777);
+    		$message->attach("C:/xampp1/htdocs/sisVentas/public/cdn/pdf/20100066603-01-F001-00000190.pdf");
+    		$message->attach($xml);
+    		$message->attach($cdr);
     	});
 
     	return "Tu email ha sido enviado satisfactoriamente";

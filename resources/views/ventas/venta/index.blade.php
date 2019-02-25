@@ -2,7 +2,7 @@
 @section('contenido')
 <div class="row">
 	<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-		<h3>Listado de Ventas <a href="venta/create"><button class="btn btn-success">Nuevo</button></a> <a href="/export-users-excel"><button class="btn btn-success">XLS</button></a> <a href="/export-users-pdf"><button class="btn btn-danger">PDF</button></a> </h3>
+		<h3>Listado de Ventas <a href="venta/create"><button class="btn btn-success">Nuevo</button></a></h3>
 		@if(\Session::has('msg'))
 			<div class="alert alert-danger alert-dismissible fade in">
 			  <a href="#" class="close" data-dismiss="alert" aria-label="close">X</a>
@@ -10,11 +10,11 @@
 			  {{\Session::forget('msg')}}
 			</div>
 		@endif
-		@if(\Session::has('msB'))
+		@if(\Session::has('msgB'))
 			<div class="alert alert-success alert-dismissible fade in">
 			  <a href="#" class="close" data-dismiss="alert" aria-label="close">X</a>
-			  <strong>{{\Session::get('msg')}}</strong>
-			  {{\Session::forget('msg')}}
+			  <strong>{{\Session::get('msgB')}}</strong>
+			  {{\Session::forget('msgB')}}
 			</div>
 		@endif
 		@include('ventas.venta.search')
@@ -43,11 +43,11 @@
 					<td>{{$ven->total_venta}}</td>
 					<td>
 						@if($ven->estado=='2')
-							<a class="btn btn-success btn-xs">Aceptado</a>
+							<a class="btn btn-success btn-xs">&nbsp;&nbsp;Aceptado&nbsp;&nbsp;</a>
 						@elseif($ven->estado=='4')
-							<a class="btn btn-default btn-xs">P. An.</a>
+							<a class="btn btn-default btn-xs">Pend. Anul.</a>
 						@elseif($ven->estado=='6')
-							<a class="btn btn-success btn-xs">An. Ace.</a>
+							<a class="btn btn-success btn-xs">&nbsp;&nbsp;Anul. Ace.&nbsp;&nbsp;</a>
 						@elseif($ven->estado=='0' || $ven->estado=='A')
 							<a class="btn btn-default btn-xs">Pend. Envio</a>
 						@else
@@ -56,17 +56,20 @@
 					</td>
 					<td>
 						<a href="{{URL::action('VentaController@show',$ven->idventa)}}">
-							<button class="btn btn-primary">Detalles</button>
+							<button class="btn btn-primary" title="Detalles"><i class="fa fa-list"></i></button>
 						</a>
-						<a href="{{ asset('cdn/pdf/'.$ruc.'-'.$ven->tipo_comprobante.'-'.$ven->serie_comprobante.'-'.$ven->num_comprobante.'.pdf') }}" target="_blank"><button class="btn btn-danger">PDF</button></a>
+						<a href="{{ asset('cdn/pdf/'.$ruc.'-'.$ven->tipo_comprobante.'-'.$ven->serie_comprobante.'-'.$ven->num_comprobante.'.pdf') }}" target="_blank"><button class="btn btn-warning" title="PDF"><i class="fa fa-file-pdf-o"></i></button></a>
 						@if($ven->estado=='2')
-							<a href="" data-target="#modal-delete-{{$ven->idventa}}" data-toggle="modal"><button class="btn btn-danger">Anular</button></a>
+							<a href="" data-target="#modal-delete-{{$ven->idventa}}" data-toggle="modal"><button class="btn btn-danger" title="Anular Comprobante"><i class="fa fa-close"></i></button></a>
 						@endif
 						@if($ven->estado=='A')
 							<?php $dataCom = $ven->idventa."*".$ven->serie_comprobante."*".$ven->num_comprobante."*".$ven->tipo_comprobante; ?>
 							
 							<input type="hidden" id="_token" name="_token" value="{{ csrf_token()}}"></input>
-							<button class="btn btn-primary" id="reenviar" value="<?php echo $dataCom; ?>"><i id="animacion<?php echo $ven->idventa; ?>"></i>  Reenviar</button>
+							<button class="btn btn-primary" id="reenviar" value="<?php echo $dataCom; ?>" title="Reenviar Comprobante SUNAT"><i id="animacion<?php echo $ven->idventa; ?>"></i>&nbsp;&nbsp;<i class="fa fa-refresh"></i></button>
+						@endif
+						@if($ven->estado=='2')
+							<a href="{{asset('/enviar-correo')}}?tc={{$ven->tipo_comprobante}}&s={{$ven->serie_comprobante}}&c={{$ven->num_comprobante}}"><button class="btn btn-success" title="Enviar Correo"><i class="fa fa-envelope"></i></button></a>
 						@endif
 						
 					</td>
